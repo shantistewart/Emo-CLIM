@@ -9,20 +9,21 @@ import warnings
 
 
 # data paths:
-DATA_ROOT = "/proj/systewar/datasets/audioset_music_mood/audio_files"
+DATA_ROOT = "/proj/systewar/datasets/audioset_music_mood"
+AUDIO_DIR = "audio_files"
 ONTOLOGY_FILE = "/proj/systewar/datasets/audioset_music_mood/orig_metadata_files/ontology.json"
 METADATA_FILES = {
-    "train": "/proj/systewar/datasets/audioset_music_mood/orig_metadata_files/unbalanced_train_segments.csv",
+    "unbalanced_train": "/proj/systewar/datasets/audioset_music_mood/orig_metadata_files/unbalanced_train_segments.csv",
     "eval": "/proj/systewar/datasets/audioset_music_mood/orig_metadata_files/eval_segments.csv"
 }
 # AudioSet music mood subset label names:
 MOOD_LABEL_NAMES = ["Happy music", "Funny music", "Sad music", "Tender music", "Exciting music", "Angry music", "Scary music"]
 
 # script options:
-data_subsets = ["train", "eval"]
-label_files = {
-    "train": "/proj/systewar/datasets/audioset_music_mood/labels_train.csv",
-    "eval": "/proj/systewar/datasets/audioset_music_mood/labels_eval.csv"
+data_subsets = ["unbalanced_train", "eval"]
+label_files_orig_split = {
+    "unbalanced_train": "/proj/systewar/datasets/audioset_music_mood/orig_split_label_files/labels_unbalanced_train.csv",
+    "eval": "/proj/systewar/datasets/audioset_music_mood/orig_split_label_files/labels_eval.csv"
 }
 
 
@@ -60,7 +61,7 @@ if __name__ == "__main__":
     print("\nExtracting audio file names...")
     audio_file_names = {}
     for subset in data_subsets:
-        subset_root = os.path.join(DATA_ROOT, subset)
+        subset_root = os.path.join(DATA_ROOT, AUDIO_DIR, subset)
         audio_file_names[subset] = [name for name in os.listdir(subset_root) if os.path.isfile(os.path.join(subset_root, name))]
     
 
@@ -68,6 +69,7 @@ if __name__ == "__main__":
     print()
     label_dfs = {}
     for subset in data_subsets:
+        orig_subset_names = []
         file_names = []
         mood_labels = []
         n_bad_files = 0     # number of audio files with not exactly 1 music mood label
@@ -103,7 +105,8 @@ if __name__ == "__main__":
                     n_mood_labels += 1
             # only keep audio files with exactly 1 music mood label:
             if n_mood_labels == 1:
-                file_names.append(subset + "/" + file_name)
+                orig_subset_names.append(subset)
+                file_names.append(file_name)
                 mood_labels.append(mood_label)
             else:
                 n_bad_files += 1
@@ -113,12 +116,13 @@ if __name__ == "__main__":
         # save as dataframe:
         label_dfs[subset] = pd.DataFrame(
             data={
+                "orig_subset": orig_subset_names,
                 "file_name": file_names,
                 "label": mood_labels
             }
         )
         # save to file:
-        label_dfs[subset].to_csv(label_files[subset], index=False)
+        label_dfs[subset].to_csv(label_files_orig_split[subset], index=False)
     
 
     print("\n")
