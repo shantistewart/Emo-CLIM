@@ -1,3 +1,23 @@
+
+
+# ADDITIONAL THINGS TO IGNORE:
+
+# VSCode files:
+.vscode
+
+# OS-generated files:
+.DS_Store
+.DS_Store?
+
+# specific directories/files:
+pretrained_models/
+train_logs/
+
+
+
+# GITHUB'S DEFAULT .gitignore FOR PYTHON:
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
