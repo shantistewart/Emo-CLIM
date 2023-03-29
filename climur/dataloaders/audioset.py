@@ -2,7 +2,6 @@
 
 
 import os
-import torch
 from torch.utils.data import Dataset
 from torch import Tensor
 import torchaudio
@@ -22,16 +21,6 @@ EMOTION_TAGS_MAP = {
     "Angry music": "angry",
     "Scary music": "scary"
 }
-# dictionary mapping emotion tags to label indices:
-EMOTION_TAG2IDX = {
-    "happy": 0,
-    "funny": 1,
-    "sad": 2,
-    "tender": 3,
-    "exciting": 4,
-    "angry": 5,
-    "scary": 6
-}
 
 
 class AudioSetMood(Dataset):
@@ -44,11 +33,10 @@ class AudioSetMood(Dataset):
         sample_rate (int): Sampling rate.
         emotion_tags_map (Dict): Dictionary mapping original emotion tag names to shorter names:
         emotion_tags (list): Emotion tags vocabulary.
-        emotion_tag2idx (Dict): Dictionary mapping emotion tags to label indices.
         audio_dir_name (str): Name of subdirectory containing audio files.
     """
 
-    def __init__(self, root: str, subset: str, clip_length_sec: float, sample_rate: int = SAMPLE_RATE, emotion_tags_map: Dict = EMOTION_TAGS_MAP, emotion_tag2idx: Dict = EMOTION_TAG2IDX, audio_dir_name: str = "audio_files") -> None:
+    def __init__(self, root: str, subset: str, clip_length_sec: float, sample_rate: int = SAMPLE_RATE, emotion_tags_map: Dict = EMOTION_TAGS_MAP, audio_dir_name: str = "audio_files") -> None:
         """Initialization.
 
         Args:
@@ -57,7 +45,6 @@ class AudioSetMood(Dataset):
             clip_length_sec (float): Target length of audio clips in seconds.
             sample_rate (int): Sampling rate.
             emotion_tags_map (Dict): Dictionary mapping original emotion tag names to shorter names:
-            emotion_tag2idx (Dict): Dictionary mapping emotion tags to label indices.
             audio_dir_name (str): Name of subdirectory containing audio files.
         
         Returns: None
@@ -70,7 +57,6 @@ class AudioSetMood(Dataset):
         self.root = root
         self.sample_rate = sample_rate
         self.emotion_tags_map = emotion_tags_map
-        self.emotion_tag2idx = emotion_tag2idx
         self.audio_dir_name = audio_dir_name
 
         # convert clip length to samples:
@@ -96,7 +82,7 @@ class AudioSetMood(Dataset):
 
         return dataset_len
     
-    def __getitem__(self, idx: int) -> Tuple[Tensor, Tensor]:
+    def __getitem__(self, idx: int) -> Tuple[Tensor, str]:
         """Gets an audio clip and its emotion label.
 
         Args:
@@ -105,7 +91,7 @@ class AudioSetMood(Dataset):
         Returns:
             audio (Tensor): Raw audio clip.
                 shape: (clip_length, )
-            label_idx (Tensor): Emotion label index.
+            label_idx (str): Emotion label index.
         """
 
         # get audio file path:
@@ -126,8 +112,6 @@ class AudioSetMood(Dataset):
         # get emotion tag:
         orig_tag = self.metadata.loc[idx, "label"]
         tag = self.emotion_tags_map[orig_tag]
-        # map to label index:
-        label_idx = torch.tensor(self.emotion_tag2idx[tag], dtype=int)
 
-        return audio, label_idx
+        return audio, tag
 
