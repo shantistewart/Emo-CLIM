@@ -31,7 +31,7 @@ class AudioSetMood(Dataset):
         root (str): Path of top-level root directory of dataset.
         clip_length_sec (float): Target length of audio clips in seconds.
         sample_rate (int): Sampling rate.
-        emotion_tags_map (Dict): Dictionary mapping original emotion tag names to shorter names:
+        emotion_tags_map (Dict): Dictionary mapping original emotion tag names to shorter names.
         emotion_tags (list): Emotion tags vocabulary.
         audio_dir_name (str): Name of subdirectory containing audio files.
     """
@@ -44,7 +44,7 @@ class AudioSetMood(Dataset):
             subset (str): Dataset subset ("train" or "test").
             clip_length_sec (float): Target length of audio clips in seconds.
             sample_rate (int): Sampling rate.
-            emotion_tags_map (Dict): Dictionary mapping original emotion tag names to shorter names:
+            emotion_tags_map (Dict): Dictionary mapping original emotion tag names to shorter names.
             audio_dir_name (str): Name of subdirectory containing audio files.
         
         Returns: None
