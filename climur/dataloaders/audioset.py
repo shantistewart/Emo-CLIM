@@ -83,7 +83,7 @@ class AudioSetMood(Dataset):
         return dataset_len
     
     def __getitem__(self, idx: int) -> Tuple[Tensor, str]:
-        """Gets an audio clip and its emotion label.
+        """Gets an audio clip and its emotion tag.
 
         Args:
             idx (int): Item index.
@@ -91,7 +91,7 @@ class AudioSetMood(Dataset):
         Returns:
             audio (Tensor): Raw audio clip.
                 shape: (clip_length, )
-            label_idx (str): Emotion label index.
+            tag (str): Emotion tag.
         """
 
         # get audio file path:
