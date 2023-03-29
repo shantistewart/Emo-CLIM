@@ -31,7 +31,6 @@ class AudioSetMood(Dataset):
         root (str): Path of top-level root directory of dataset.
         clip_length_sec (float): Target length of audio clips in seconds.
         sample_rate (int): Sampling rate.
-        emotion_tags_map (Dict): Dictionary mapping original emotion tag names to shorter names.
         emotion_tags (list): Emotion tags vocabulary.
         audio_dir_name (str): Name of subdirectory containing audio files.
     """
@@ -56,7 +55,6 @@ class AudioSetMood(Dataset):
         # save parameters:
         self.root = root
         self.sample_rate = sample_rate
-        self.emotion_tags_map = emotion_tags_map
         self.audio_dir_name = audio_dir_name
 
         # convert clip length to samples:
@@ -64,10 +62,14 @@ class AudioSetMood(Dataset):
 
         # load metadata:
         self.metadata = pd.read_csv(os.path.join(self.root, f"labels_{subset}.csv"))
-        # get emotion tags:
         orig_emotion_tags = self.metadata["label"].unique().tolist()
-        self.emotion_tags = [self.emotion_tags_map[tag] for tag in orig_emotion_tags]
-        assert set(self.emotion_tags) == set(list(self.emotion_tags_map.values())), "Error with emotion_tags_map."
+        # map original emotion tag names to shorter names:
+        for idx in range(self.metadata.shape[0]):
+            self.metadata.loc[idx, "label"] = emotion_tags_map[self.metadata.loc[idx, "label"]]
+        # get new emotion tags:
+        self.emotion_tags = self.metadata["label"].unique().tolist()
+        assert len(self.emotion_tags) == len(orig_emotion_tags), "Error with mapping original emotion tag names to shorter names."
+        assert set(self.emotion_tags) == set(list(emotion_tags_map.values())), "Error with mapping original emotion tag names to shorter names."
     
     def __len__(self) -> int:
         """Gets length of dataset.
@@ -110,8 +112,7 @@ class AudioSetMood(Dataset):
         # TODO: randomly (?) crop to target clip length:
 
         # get emotion tag:
-        orig_tag = self.metadata.loc[idx, "label"]
-        tag = self.emotion_tags_map[orig_tag]
+        tag = self.metadata.loc[idx, "label"]
 
         return audio, tag
 
