@@ -61,8 +61,6 @@ class IMACImages(Dataset):
         Returns:
             image (Tensor): Raw image.
                 shape: (image_channels, image_height, image_width)
-            audio (Tensor): Raw audio clip.
-                shape: (clip_length, )
             tag (str): Emotion tag.
         """
 
