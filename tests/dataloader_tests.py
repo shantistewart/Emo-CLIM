@@ -14,8 +14,8 @@ IMAC_IMAGES_DATA_ROOT = "/proj/systewar/datasets/IMAC/image_dataset"
 subset = "train"
 example_idx = 9
 # for AudioSet:
-clip_length_sec = 10.0
 sample_rate = 16000
+clip_length_samples = int(10.0 * sample_rate)
 # for multimodal dataset:
 same_tag_prob = 0.5
 
@@ -49,7 +49,7 @@ if __name__ == "__main__":
     audioset_dataset = AudioSetMood(
         root=AUDIOSET_DATA_ROOT,
         subset=subset,
-        clip_length_sec=clip_length_sec,
+        clip_length_samples=clip_length_samples,
         sample_rate=sample_rate
     )
 
@@ -60,7 +60,7 @@ if __name__ == "__main__":
     # test __getitem__() method:
     print("Testing __getitem__() method...")
     audio, tag = audioset_dataset[example_idx]
-    assert len(tuple(audio.size())) == 1 and audio.size(dim=0) == int(sample_rate * clip_length_sec), "Error with audio shape."
+    assert len(tuple(audio.size())) == 1 and audio.size(dim=0) == clip_length_samples, "Error with audio shape."
 
 
     # Multimodal CLASS TESTS:
@@ -81,7 +81,7 @@ if __name__ == "__main__":
 
     assert type(item) == dict and len(item) == 4, "Error with item dictionary."
     assert len(tuple(item["image"].size())) == 3 and item["image"].size(dim=0) == 3, "Error with image shape."
-    assert len(tuple(item["audio"].size())) == 1 and item["audio"].size(dim=0) == int(sample_rate * clip_length_sec), "Error with audio shape."
+    assert len(tuple(item["audio"].size())) == 1 and item["audio"].size(dim=0) == clip_length_samples, "Error with audio shape."
     assert type(item["image_label"]) == str and type(item["audio_label"]) == str, "Error with data type of emotion tags."
 
     print()

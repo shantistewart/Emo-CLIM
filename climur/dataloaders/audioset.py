@@ -29,19 +29,19 @@ class AudioSetMood(Dataset):
     Attributes:
         metadata (DataFrame): Metadata.
         root (str): Path of top-level root directory of dataset.
-        clip_length_sec (float): Target length of audio clips in seconds.
+        clip_length (int): Target length of audio clips in samples.
         sample_rate (int): Sampling rate.
         emotion_tags (list): Emotion tags vocabulary.
         audio_dir_name (str): Name of subdirectory containing audio files.
     """
 
-    def __init__(self, root: str, subset: str, clip_length_sec: float, sample_rate: int = SAMPLE_RATE, emotion_tags_map: Dict = EMOTION_TAGS_MAP, audio_dir_name: str = "audio_files") -> None:
+    def __init__(self, root: str, subset: str, clip_length_samples: int, sample_rate: int = SAMPLE_RATE, emotion_tags_map: Dict = EMOTION_TAGS_MAP, audio_dir_name: str = "audio_files") -> None:
         """Initialization.
 
         Args:
             root (str): Path of root directory of dataset.
             subset (str): Dataset subset ("train" or "test").
-            clip_length_sec (float): Target length of audio clips in seconds.
+            clip_length_samples (int): Target length of audio clips in samples.
             sample_rate (int): Sampling rate.
             emotion_tags_map (Dict): Dictionary mapping original emotion tag names to shorter names.
             audio_dir_name (str): Name of subdirectory containing audio files.
@@ -54,11 +54,9 @@ class AudioSetMood(Dataset):
             raise ValueError("Invalid dataset subset.")
         # save parameters:
         self.root = root
+        self.clip_length = clip_length_samples
         self.sample_rate = sample_rate
         self.audio_dir_name = audio_dir_name
-
-        # convert clip length to samples:
-        self.clip_length = int(self.sample_rate * clip_length_sec)
 
         # load metadata:
         self.metadata = pd.read_csv(os.path.join(self.root, f"labels_{subset}.csv"))
