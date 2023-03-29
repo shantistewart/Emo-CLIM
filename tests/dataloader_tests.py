@@ -73,7 +73,6 @@ if __name__ == "__main__":
 
     # test __len__() method:
     print("\nTesting __len__() method...")
-    assert len(multimodal_dataset) == min(len(multimodal_dataset.image_dataset), len(multimodal_dataset.audio_dataset)), "Error with __len__() method."
     print("Size of dataset: {}".format(len(multimodal_dataset)))
 
     # test __getitem__() method:

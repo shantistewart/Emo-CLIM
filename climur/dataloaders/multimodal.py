@@ -88,15 +88,25 @@ class Multimodal(Dataset):
         assert len(self.tag_pairs["same"]) + len(self.tag_pairs["different"]) == len(self.image_tags) * len(self.audio_tags), "Error creating multimodal tag pairs."
     
     def __len__(self) -> int:
-        """Gets length of dataset.
+        """Gets effective length of dataset.
 
         Args: None
 
         Returns:
-            dataset_len (int): Minimum of image and audio datasets.
+            dataset_len (int): Minimum of effective sizes of image and audio dataset.
         """
 
-        dataset_len = min(len(self.image_dataset), len(self.audio_dataset))
+        # compute effective image dataset length:
+        image_dataset_len = 0
+        for df in self.tag2image.values():
+            image_dataset_len += df.shape[0]
+        
+        # compute effective audio dataset length:
+        audio_dataset_len = 0
+        for df in self.tag2audio.values():
+            audio_dataset_len += df.shape[0]
+        
+        dataset_len = min(image_dataset_len, audio_dataset_len)
 
         return dataset_len
     
