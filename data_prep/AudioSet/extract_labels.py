@@ -4,6 +4,7 @@
 import os
 import pandas as pd
 import json
+import torchaudio
 import tqdm
 import warnings
 
@@ -12,7 +13,7 @@ import warnings
 DATA_ROOT = "/proj/systewar/datasets/audioset_music_mood"
 AUDIO_DIR = "audio_files"
 ONTOLOGY_FILE = "/proj/systewar/datasets/audioset_music_mood/orig_metadata_files/ontology.json"
-METADATA_FILES = {
+ORIG_METADATA_FILES = {
     "unbalanced_train": "/proj/systewar/datasets/audioset_music_mood/orig_metadata_files/unbalanced_train_segments.csv",
     "eval": "/proj/systewar/datasets/audioset_music_mood/orig_metadata_files/eval_segments.csv"
 }
@@ -21,9 +22,9 @@ MOOD_LABEL_NAMES = ["Happy music", "Funny music", "Sad music", "Tender music", "
 
 # script options:
 data_subsets = ["unbalanced_train", "eval"]
-label_files_orig_split = {
-    "unbalanced_train": "/proj/systewar/datasets/audioset_music_mood/orig_split_label_files/labels_unbalanced_train.csv",
-    "eval": "/proj/systewar/datasets/audioset_music_mood/orig_split_label_files/labels_eval.csv"
+new_metadata_files = {
+    "unbalanced_train": "/proj/systewar/datasets/audioset_music_mood/metadata_unbalanced_train.csv",
+    "eval": "/proj/systewar/datasets/audioset_music_mood/metadata_eval.csv"
 }
 
 
@@ -49,12 +50,12 @@ if __name__ == "__main__":
                 mood_label_ids[entry["id"]] = entry["name"]
     
 
-    # load metadata:
+    # load original metadata files:
     print("\nLoading metadata...")
-    metadata_dfs = {}
+    orig_metadata_dfs = {}
     col_names = ["youtube_id", "start_seconds", "end_seconds", "positive_labels"]
     for subset in data_subsets:
-        metadata_dfs[subset] = pd.read_csv(METADATA_FILES[subset], sep=", ", names=col_names, header=None, skiprows=[0, 1, 2])
+        orig_metadata_dfs[subset] = pd.read_csv(ORIG_METADATA_FILES[subset], sep=", ", names=col_names, header=None, skiprows=[0, 1, 2])
     
 
     # extract audio file names:
@@ -63,17 +64,18 @@ if __name__ == "__main__":
     for subset in data_subsets:
         subset_root = os.path.join(DATA_ROOT, AUDIO_DIR, subset)
         audio_file_names[subset] = [name for name in os.listdir(subset_root) if os.path.isfile(os.path.join(subset_root, name))]
+        print("Original size of {} set: {}".format(subset, len(audio_file_names[subset])))
     
 
     # extract labels of audio files:
     print()
-    label_dfs = {}
+    new_metadata_dfs = {}
     for subset in data_subsets:
         orig_subset_names = []
         file_names = []
+        clip_length_samples = []
         mood_labels = []
         n_bad_files = 0     # number of audio files with not exactly 1 music mood label
-        print()
         for file_name in tqdm.tqdm(audio_file_names[subset], total=len(audio_file_names[subset]), desc="Extracting labels for {} set".format(subset)):
             # extract youtube ID from file name:
             youtube_id_start_time = file_name.replace(".wav", "")
@@ -82,8 +84,13 @@ if __name__ == "__main__":
             youtube_id = youtube_id_start_time.replace(start_time, "")
             assert len(youtube_id) == len(youtube_id_start_time) - len(start_time), "Error with removing start_time."
 
+            # get audio clip length (in samples):
+            file_path = os.path.join(DATA_ROOT, AUDIO_DIR, subset, file_name)
+            metadata = torchaudio.info(file_path)
+            length_samples = metadata.num_frames
+
             # get label ids by querying metadata with youtube id:
-            label_ids = metadata_dfs[subset]["positive_labels"][metadata_dfs[subset]["youtube_id"] == youtube_id]
+            label_ids = orig_metadata_dfs[subset]["positive_labels"][orig_metadata_dfs[subset]["youtube_id"] == youtube_id]
 
             # convert format of labels ids:
             label_ids = label_ids.reset_index(drop=True)
@@ -107,6 +114,7 @@ if __name__ == "__main__":
             if n_mood_labels == 1:
                 orig_subset_names.append(subset)
                 file_names.append(file_name)
+                clip_length_samples.append(length_samples)
                 mood_labels.append(mood_label)
             else:
                 n_bad_files += 1
@@ -114,15 +122,19 @@ if __name__ == "__main__":
         print("Number of audio files with not exactly 1 music mood label: {}".format(n_bad_files))
 
         # save as dataframe:
-        label_dfs[subset] = pd.DataFrame(
+        new_metadata_dfs[subset] = pd.DataFrame(
             data={
                 "orig_subset": orig_subset_names,
                 "file_name": file_names,
+                "length_samples": clip_length_samples,
                 "label": mood_labels
             }
         )
+        print()
+        print(new_metadata_dfs[subset].info())
+        print("\n")
         # save to file:
-        label_dfs[subset].to_csv(label_files_orig_split[subset], index=False)
+        new_metadata_dfs[subset].to_csv(new_metadata_files[subset], index=False)
     
 
     print("\n")
