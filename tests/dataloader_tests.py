@@ -15,7 +15,8 @@ subset = "train"
 example_idx = 9
 # for AudioSet:
 sample_rate = 16000
-clip_length_samples = int(10.0 * sample_rate)
+clip_length_sec = 5.0
+clip_length_samples = int(clip_length_sec * sample_rate)
 # for multimodal dataset:
 same_tag_prob = 0.5
 

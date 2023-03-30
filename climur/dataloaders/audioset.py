@@ -6,6 +6,7 @@ from torch.utils.data import Dataset
 from torch import Tensor
 import torchaudio
 import pandas as pd
+import numpy as np
 from typing import Dict, Tuple
 
 
@@ -103,11 +104,15 @@ class AudioSetMood(Dataset):
         audio = audio.squeeze(dim=0)
         assert sample_rate == self.sample_rate, "Unexpected sampling rate."
 
-        # crop to target clip length:
+        # check that audio clip is long enough:
         length = audio.size(dim=0)
         if length < self.clip_length:
-            raise RuntimeError("Audio clip is too short")
-        # TODO: randomly (?) crop to target clip length:
+            raise RuntimeError("Audio clip is too short.")
+        # randomly crop to target clip length:
+        start_idx = np.random.randint(low=0, high=length - self.clip_length + 1)
+        end_idx = start_idx + self.clip_length
+        audio = audio[start_idx : end_idx]
+        assert audio.size(dim=0) == self.clip_length, "Error with cropping audio clip."
 
         # get emotion tag:
         tag = self.metadata.loc[idx, "label"]
