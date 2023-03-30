@@ -57,7 +57,11 @@ class AudioSetMood(Dataset):
         self.audio_dir_name = audio_dir_name
 
         # load metadata:
-        self.metadata = pd.read_csv(os.path.join(self.root, metadata_file_name))
+        orig_metadata = pd.read_csv(os.path.join(self.root, metadata_file_name))
+        # filter out audio clips that are too short:
+        self.metadata = orig_metadata[orig_metadata["length_samples"] >= self.clip_length]
+        self.metadata = self.metadata.reset_index(drop=True)
+
         orig_emotion_tags = self.metadata["label"].unique().tolist()
         # map original emotion tag names to shorter names:
         for idx in range(self.metadata.shape[0]):
