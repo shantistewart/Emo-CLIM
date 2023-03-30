@@ -36,12 +36,12 @@ class AudioSetMood(Dataset):
         audio_dir_name (str): Name of subdirectory containing audio files.
     """
 
-    def __init__(self, root: str, subset: str, clip_length_samples: int, sample_rate: int = SAMPLE_RATE, emotion_tags_map: Dict = EMOTION_TAGS_MAP, audio_dir_name: str = "audio_files") -> None:
+    def __init__(self, root: str, metadata_file_name: str, clip_length_samples: int, sample_rate: int = SAMPLE_RATE, emotion_tags_map: Dict = EMOTION_TAGS_MAP, audio_dir_name: str = "audio_files") -> None:
         """Initialization.
 
         Args:
             root (str): Path of root directory of dataset.
-            subset (str): Dataset subset ("train" or "test").
+            metadata_file_name (str): Name of metadata file.
             clip_length_samples (int): Target length of audio clips in samples.
             sample_rate (int): Sampling rate.
             emotion_tags_map (Dict): Dictionary mapping original emotion tag names to shorter names.
@@ -50,9 +50,6 @@ class AudioSetMood(Dataset):
         Returns: None
         """
 
-        # validate dataset subset:
-        if subset != "train" and subset != "test":
-            raise ValueError("Invalid dataset subset.")
         # save parameters:
         self.root = root
         self.clip_length = clip_length_samples
@@ -60,7 +57,7 @@ class AudioSetMood(Dataset):
         self.audio_dir_name = audio_dir_name
 
         # load metadata:
-        self.metadata = pd.read_csv(os.path.join(self.root, f"labels_{subset}.csv"))
+        self.metadata = pd.read_csv(os.path.join(self.root, metadata_file_name))
         orig_emotion_tags = self.metadata["label"].unique().tolist()
         # map original emotion tag names to shorter names:
         for idx in range(self.metadata.shape[0]):

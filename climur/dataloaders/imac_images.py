@@ -18,24 +18,21 @@ class IMACImages(Dataset):
         emotion_tags (list): Emotion tags vocabulary.
     """
 
-    def __init__(self, root: str, subset: str) -> None:
+    def __init__(self, root: str, metadata_file_name: str) -> None:
         """Initialization.
 
         Args:
             root (str): Path of root directory of dataset.
-            subset (str): Dataset subset ("train" or "test").
+            metadata_file_name (str): Name of metadata file.
         
         Returns: None
         """
 
-        # validate dataset subset:
-        if subset != "train" and subset != "test":
-            raise ValueError("Invalid dataset subset.")
         # save parameters:
         self.root = root
 
         # load metadata:
-        self.metadata = pd.read_csv(os.path.join(self.root, f"labels_{subset}.csv"))
+        self.metadata = pd.read_csv(os.path.join(self.root, metadata_file_name))
         # get emotion tags:
         self.emotion_tags = self.metadata["label"].unique().tolist()
     

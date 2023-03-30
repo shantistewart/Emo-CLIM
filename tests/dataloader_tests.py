@@ -7,11 +7,12 @@ from climur.dataloaders.imac_images import IMACImages
 
 
 # dataset paths:
-AUDIOSET_DATA_ROOT = "/proj/systewar/datasets/audioset_music_mood"
 IMAC_IMAGES_DATA_ROOT = "/proj/systewar/datasets/IMAC/image_dataset"
+IMAC_IMAGES_METADATA_FILE = "metadata_train.csv"
+AUDIOSET_DATA_ROOT = "/proj/systewar/datasets/audioset_music_mood"
+AUDIOSET_METADATA_FILE = "metadata_unbalanced_train.csv"
 
 # script options:
-subset = "train"
 example_idx = 9
 # for AudioSet:
 sample_rate = 16000
@@ -30,7 +31,7 @@ if __name__ == "__main__":
     # create dataset:
     imac_dataset = IMACImages(
         root=IMAC_IMAGES_DATA_ROOT,
-        subset=subset
+        metadata_file_name=IMAC_IMAGES_METADATA_FILE
     )
 
     # test __len__() method:
@@ -49,7 +50,7 @@ if __name__ == "__main__":
     # create dataset:
     audioset_dataset = AudioSetMood(
         root=AUDIOSET_DATA_ROOT,
-        subset=subset,
+        metadata_file_name=AUDIOSET_METADATA_FILE,
         clip_length_samples=clip_length_samples,
         sample_rate=sample_rate
     )
