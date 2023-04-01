@@ -1,23 +1,44 @@
-import torch
-import clip
+"""PyTorch model classes for image backbone models."""
+
+
 import torch.nn as nn
+from torch import Tensor
 
-# device = "cuda" if torch.cuda.is_available() else "cpu"
-# model, preprocess = clip.load("ViT-B/32", device=device)
-class clip_model(nn.Module):
 
-    def __init__(self,model,device,freeze_img=True):
-        super(clip_model, self).__init__()
+class CLIPModel(nn.Module):
+    """Wrapper class for CLIP model.
 
-        #model option, device 
-        self.model= model
-        self.device=device
+    Attributes:
+        model (nn.Module): CLIP model.
+    """
 
-        if freeze_img:
-            for param in self.model.parameters():
-                param.requires_grad = False
+    def __init__(self, model: nn.Module) -> None:
+        """Initialization.
 
-    def forward(self, x):
-        with torch.no_grad():
-            image_features = self.model.encode_images(x)
-        return image_features
+        Args:
+            model (nn.Module): CLIP model.
+        
+        Returns: None
+        """
+
+        super(CLIPModel, self).__init__()
+
+        # save model:
+        self.model = model
+    
+    def forward(self, x: Tensor) -> Tensor:
+        """Forward pass.
+
+        Args:
+            x (Tensor): Preprocessed images.
+                shape: (batch_size, image_channels, image_height, image_width)
+        
+        Returns:
+            image_feats (Tensor): Image features (embeddings).
+        """
+
+        # encode images:
+        image_feats = self.model.encode_image(x)
+
+        return image_feats
+
