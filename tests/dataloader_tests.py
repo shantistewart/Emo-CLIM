@@ -1,9 +1,9 @@
 """Script for testing dataset classes and dataloaders."""
 
 
-from climur.dataloaders.multimodal import Multimodal
-from climur.dataloaders.audioset import AudioSetMood
 from climur.dataloaders.imac_images import IMACImages
+from climur.dataloaders.audioset import AudioSetMood
+from climur.dataloaders.multimodal import Multimodal
 
 
 # dataset paths:
@@ -31,7 +31,8 @@ if __name__ == "__main__":
     # create dataset:
     imac_dataset = IMACImages(
         root=IMAC_IMAGES_DATA_ROOT,
-        metadata_file_name=IMAC_IMAGES_METADATA_FILE
+        metadata_file_name=IMAC_IMAGES_METADATA_FILE,
+        preprocess=None
     )
 
     # test __len__() method:
