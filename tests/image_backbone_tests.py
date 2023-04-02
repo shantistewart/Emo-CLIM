@@ -1,25 +1,26 @@
 """Script for testing image backbone models."""
 
 
+import os
 import torch
+import torchinfo
 import clip
-import sys
-sys.path.append('../climur')
-
 from climur.models.image_backbones import CLIPModel
-from climur.dataloaders.imac_images import IMACImages
 
 
 # constants:
 CLIP_EMBED_SIZE = 512
-
-# dataset paths:
-IMAC_IMAGES_DATA_ROOT = "/proj/systewar/datasets/IMAC/image_dataset"
-IMAC_IMAGES_METADATA_FILE = "metadata_train.csv"
+IMAGE_CHANNELS = 3
+IMAGE_HEIGHT, IMAGE_WIDTH = 224, 224
 
 # script options:
 device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("cpu")
-example_idx = 9
+batch_size = 16
+# for model summaries:
+model_summaries = True
+if model_summaries:
+    summaries_dir = "tests/model_summaries"
+    model_summary_info = ["input_size", "output_size", "num_params"]
 
 
 if __name__ == "__main__":
@@ -29,28 +30,35 @@ if __name__ == "__main__":
     print("Testing CLIP model:")
 
     # load CLIP model:
-    model, preprocess = clip.load("ViT-B/32", device=device)
-
-    # create image dataset:
-    imac_dataset = IMACImages(
-        root=IMAC_IMAGES_DATA_ROOT,
-        metadata_file_name=IMAC_IMAGES_METADATA_FILE,
-        preprocess=preprocess
-    )
-    # get example image:
-    image, tag = imac_dataset[example_idx]
-    image = image.unsqueeze(dim=0)
-    image = image.to(device)
-
+    orig_model, preprocess = clip.load("ViT-B/32", device=device)
     # create CLIP wrapper model:
-    img_model = CLIPModel(model)
+    wrap_model = CLIPModel(orig_model)
+    wrap_model.to(device)
 
     # test forward pass:
     print("\nTesting forward pass...")
-    print("Input size: {}".format(tuple(image.size())))
-    output = img_model(image)
+    wrap_model.eval()
+    x = torch.rand((batch_size, IMAGE_CHANNELS, IMAGE_HEIGHT, IMAGE_WIDTH))
+    x = x.to(device)
+    print("Input size: {}".format(tuple(x.size())))
+    output = wrap_model(x)
     print("Output size: {}".format(tuple(output.size())))
-    assert tuple(output.size()) == (1, CLIP_EMBED_SIZE), "Error with shape of forward pass output."
+    assert tuple(output.size()) == (batch_size, CLIP_EMBED_SIZE), "Error with shape of forward pass output."
 
+    # create model summary, if selected:
+    if model_summaries:
+        print("\nCreating model summary...")
+        os.makedirs(summaries_dir, exist_ok=True)
+        clip_model_summary = str(torchinfo.summary(
+            wrap_model,
+            input_size=(batch_size, IMAGE_CHANNELS, IMAGE_HEIGHT, IMAGE_WIDTH),
+            col_names=model_summary_info,
+            depth=3,
+            verbose=0
+        ))
+        clip_model_summary_file = os.path.join(summaries_dir, "clip_model_summary.txt")
+        with open(clip_model_summary_file, "w") as text_file:
+            text_file.write(clip_model_summary)
+    
     print("\n")
 

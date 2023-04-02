@@ -14,15 +14,15 @@ AUDIO_LENGTH = 5 * SAMPLE_RATE     # 5.0 seconds
 HCNN_N_CLASSES = 50
 
 # script options:
-device = torch.device("cuda")
-pretrained_harmonic_cnn_path = "/proj/systewar/pretrained_models/music_tagging/msd/harmonic_cnn/best_model.pth"
+device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("cpu")
+batch_size = 16
 # for HarmonicCNNEmbeddings model:
+pretrained_harmonic_cnn_path = "/proj/systewar/pretrained_models/music_tagging/msd/harmonic_cnn/best_model.pth"
 last_layer_embed = "layer7"
 shrink_freq = True
 shrink_time = True
 pool_type = "max"
 # for model summaries:
-batch_size = 16
 model_summaries = True
 if model_summaries:
     summaries_dir = "tests/model_summaries"
@@ -40,8 +40,8 @@ if __name__ == "__main__":
     full_model.load_state_dict(torch.load(pretrained_harmonic_cnn_path, map_location=device))
     full_model.to(device)
 
-    print("Testing forward pass...")
     # test forward pass:
+    print("Testing forward pass...")
     full_model.eval()
     x = torch.rand((batch_size, AUDIO_LENGTH))
     x = x.to(device)
