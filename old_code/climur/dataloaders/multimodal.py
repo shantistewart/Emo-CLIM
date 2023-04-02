@@ -29,25 +29,32 @@ class Multimodal(Dataset):
         image2audio_tag_map (dict): Dictionary mapping image dataset emotion tags to audio dataset emotion tags.
         image_tags (list): Image dataset emotion tags.
         audio_tags (list): Audio dataset emotion tags.
+        tag_pairs (dict): All possible pairs of (image emotion tag, audio emotion tag).
+        same_tag_prob (float): Probability that retrieved image and audio clip have the same emotion tag.
     """
 
-    def __init__(self, image_dataset: Dataset, audio_dataset: Dataset, image2audio_tag_map: Dict = IMAGE2AUDIO_TAG_MAP) -> None:
+    def __init__(self, image_dataset: Dataset, audio_dataset: Dataset, image2audio_tag_map: Dict = IMAGE2AUDIO_TAG_MAP, same_tag_prob: float = 0.5) -> None:
         """Initialization.
 
         Args:
             image_dataset (PyTorch Dataset): Image dataset.
             audio_dataset (PyTorch Dataset): Audio dataset.
             image2audio_tag_map (dict): Dictinoary mapping image dataset emotion tags to audio dataset emotion tags.
+            same_tag_prob (float): Probability that retrieved image and audio clip have the same emotion tag.
         
         Returns: None
         """
 
         # validate params:
+        if same_tag_prob < 0.0 or same_tag_prob > 1.0:
+            raise ValueError("same_tag_prob not in [0, 1].")
         assert set(list(image2audio_tag_map.keys())) <= set(image_dataset.emotion_tags), "image2audio_tag_map contains emotion tags not in image dataset."
         assert set(list(image2audio_tag_map.values())) <= set(audio_dataset.emotion_tags), "image2audio_tag_map contains emotion tags not in image dataset."
 
-        # save params and things related to emotion tags:
+        # save params:
         self.image2audio_tag_map = image2audio_tag_map
+        self.same_tag_prob = same_tag_prob
+        # save things related to emotion tags:
         self.n_classes = len(image2audio_tag_map)
         self.image_tags = list(image2audio_tag_map.keys())
         self.audio_tags = list(image2audio_tag_map.values())
@@ -64,6 +71,21 @@ class Multimodal(Dataset):
         self.tag2audio = {}
         for tag in self.audio_tags:
             self.tag2audio[tag] = audio_dataset.metadata[audio_dataset.metadata["label"] == tag]
+        
+        # create all possible pairs of (image emotion tag, audio emotion tag):
+        self.tag_pairs = {
+            "same": [],
+            "different": []
+        }
+        for image_tag in self.image_tags:
+            for audio_tag in self.audio_tags:
+                # if same tag:
+                if self.image2audio_tag_map[image_tag] == audio_tag:
+                    self.tag_pairs["same"].append((image_tag, audio_tag))
+                # else different tag:
+                else:
+                    self.tag_pairs["different"].append((image_tag, audio_tag))
+        assert len(self.tag_pairs["same"]) + len(self.tag_pairs["different"]) == len(self.image_tags) * len(self.audio_tags), "Error creating multimodal tag pairs."
     
     def __len__(self) -> int:
         """Gets effective length of dataset.
@@ -104,15 +126,20 @@ class Multimodal(Dataset):
                 "audio_label" (str): Audio emotion label.
         """
 
-        # randomly select emotion tag for image:
-        image_tag = random.choice(self.image_tags)
+        # randomly choose if image and audio clip will have the same emotion tag (with probability same_tag_prob):
+        same_tag = np.random.choice([True, False], p=[self.same_tag_prob, 1 - self.same_tag_prob])
+
+        # randomly select a (image emotion tag, audio emotion tag) pair:
+        if same_tag:
+            (image_tag, audio_tag) = random.choice(self.tag_pairs["same"])
+        else:
+            (image_tag, audio_tag) = random.choice(self.tag_pairs["different"])
+        
         # randomly select an image labeled with selected emotion tag:
         image_idx = int(self.tag2image[image_tag].sample(n=1, axis="index").index[0])
         image, tag = self.image_dataset[image_idx]
         assert tag == image_tag, "Image has incorrect emotion label."
 
-        # randomly select emotion tag for audio clip:
-        audio_tag = random.choice(self.audio_tags)
         # randomly select an audio clip labeled with selected emotion tag:
         audio_idx = int(self.tag2audio[audio_tag].sample(n=1, axis="index").index[0])
         audio, tag = self.audio_dataset[audio_idx]

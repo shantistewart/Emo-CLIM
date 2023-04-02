@@ -18,8 +18,6 @@ example_idx = 9
 sample_rate = 16000
 clip_length_sec = 5.0
 clip_length_samples = int(clip_length_sec * sample_rate)
-# for multimodal dataset:
-same_tag_prob = 0.5
 
 
 if __name__ == "__main__":
@@ -70,8 +68,7 @@ if __name__ == "__main__":
     print("\n\n\nTesting Multimodal class...")
     multimodal_dataset = Multimodal(
         image_dataset=imac_dataset,
-        audio_dataset=audioset_dataset,
-        same_tag_prob=same_tag_prob
+        audio_dataset=audioset_dataset
     )
 
     # test __len__() method:
