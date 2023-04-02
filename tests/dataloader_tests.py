@@ -82,13 +82,13 @@ if __name__ == "__main__":
     assert type(item) == dict and len(item) == 4, "Error with item dictionary."
     assert len(tuple(item["image"].size())) == 3 and item["image"].size(dim=0) == 3, "Error with image shape."
     assert len(tuple(item["audio"].size())) == 1 and item["audio"].size(dim=0) == clip_length_samples, "Error with audio shape."
-    assert type(item["image_label"]) == str and type(item["audio_label"]) == str, "Error with data type of emotion tags."
+    assert type(item["image_label"]) == int and type(item["audio_label"]) == int, "Error with data type of emotion label indices."
 
     print()
     print("image shape: {}".format(tuple(item["image"].size())))
-    print("image emotion label: {}".format(item["image_label"]))
+    print("image emotion label: {}".format(multimodal_dataset.idx2label[item["image_label"]]))
     print("audio shape: {}".format(tuple(item["audio"].size())))
-    print("audio emotion label: {}".format(item["audio_label"]))
+    print("audio emotion label: {}".format(multimodal_dataset.idx2label[item["audio_label"]]))
 
 
     print("\n")
