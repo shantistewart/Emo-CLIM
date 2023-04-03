@@ -35,6 +35,7 @@ class CLIPModel(nn.Module):
         
         Returns:
             image_feats (Tensor): Image features (embeddings).
+                shape: (batch_size, embed_dim)
         """
 
         # encode images:
