@@ -4,6 +4,7 @@
 import os
 import torch
 import torchinfo
+import warnings
 from climur.models.audio_backbones import HarmonicCNNEmbeddings
 from climur.models.audio_model_components import HarmonicCNN
 
@@ -11,13 +12,13 @@ from climur.models.audio_model_components import HarmonicCNN
 # constants:
 SAMPLE_RATE = 16000
 AUDIO_LENGTH = 5 * SAMPLE_RATE     # 5.0 seconds
-HCNN_N_CLASSES = 50
+N_CLASSES = 50
 
 # script options:
 device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("cpu")
 batch_size = 16
-# for HarmonicCNNEmbeddings model:
-pretrained_harmonic_cnn_path = "/proj/systewar/pretrained_models/music_tagging/msd/harmonic_cnn/best_model.pth"
+# model options:
+pretrained_full_model_path = "/proj/systewar/pretrained_models/music_tagging/msd/harmonic_cnn/best_model.pth"
 last_layer_embed = "layer7"
 shrink_freq = True
 shrink_time = True
@@ -31,13 +32,16 @@ if model_summaries:
 
 if __name__ == "__main__":
     print("\n\n")
+    # suppress warnings:
+    warnings.filterwarnings("ignore")
 
+    
     # test full HarmonicCNN model:
     print("Testing full Harmonic CNN model:")
 
     # load pretrained full Harmonic CNN model:
     full_model = HarmonicCNN()
-    full_model.load_state_dict(torch.load(pretrained_harmonic_cnn_path, map_location=device))
+    full_model.load_state_dict(torch.load(pretrained_full_model_path, map_location=device))
     full_model.to(device)
 
     # test forward pass:
@@ -46,7 +50,7 @@ if __name__ == "__main__":
     x = torch.rand((batch_size, AUDIO_LENGTH))
     x = x.to(device)
     output = full_model(x)
-    assert tuple(output.size()) == (batch_size, HCNN_N_CLASSES), "Error with shape of forward pass output."
+    assert tuple(output.size()) == (batch_size, N_CLASSES), "Error with shape of forward pass output."
     
     # create model summary, if selected:
     if model_summaries:
