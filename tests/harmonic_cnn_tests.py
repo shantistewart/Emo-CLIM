@@ -1,4 +1,4 @@
-"""Script for testing audio backbone models."""
+"""Script for testing HarmonicCNN model."""
 
 
 import os
