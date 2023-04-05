@@ -15,15 +15,17 @@ AUDIO_DIR = "audio_files"
 ONTOLOGY_FILE = "/proj/systewar/datasets/audioset_music_mood/orig_metadata_files/ontology.json"
 ORIG_METADATA_FILES = {
     "unbalanced_train": "/proj/systewar/datasets/audioset_music_mood/orig_metadata_files/unbalanced_train_segments.csv",
+    "balanced_train": "/proj/systewar/datasets/audioset_music_mood/orig_metadata_files/balanced_train_segments.csv",
     "eval": "/proj/systewar/datasets/audioset_music_mood/orig_metadata_files/eval_segments.csv"
 }
 # AudioSet music mood subset label names:
 MOOD_LABEL_NAMES = ["Happy music", "Funny music", "Sad music", "Tender music", "Exciting music", "Angry music", "Scary music"]
 
 # script options:
-data_subsets = ["unbalanced_train", "eval"]
+data_subsets = ["unbalanced_train", "balanced_train", "eval"]
 new_metadata_files = {
     "unbalanced_train": "/proj/systewar/datasets/audioset_music_mood/metadata_unbalanced_train.csv",
+    "balanced_train": "/proj/systewar/datasets/audioset_music_mood/metadata_balanced_train.csv",
     "eval": "/proj/systewar/datasets/audioset_music_mood/metadata_eval.csv"
 }
 
@@ -68,7 +70,7 @@ if __name__ == "__main__":
     
 
     # extract labels of audio files:
-    print()
+    print("\n")
     new_metadata_dfs = {}
     for subset in data_subsets:
         orig_subset_names = []
