@@ -69,7 +69,7 @@ class HarmonicCNNEmbeddings(nn.Module):
             kernel_size = None     # no global pooling
         
         # use average or max global pooling, if necessary:
-        if kernel_size is None or (sample_output.size(dim=-2) == 1 and sample_input.size(dim=-1)):     # no shrinking is requested or (freq_dim, time_dim) are both already size 1
+        if kernel_size is None or (sample_output.size(dim=-2) == 1 and sample_output.size(dim=-1) == 1):     # no shrinking is requested or (freq_dim, time_dim) are both already size 1
             self.global_pool = None     # no global pooling
         else:
             if pool_type == "average":

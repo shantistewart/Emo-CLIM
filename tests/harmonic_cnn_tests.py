@@ -35,7 +35,7 @@ if __name__ == "__main__":
     # suppress warnings:
     warnings.filterwarnings("ignore")
 
-    
+
     # test full HarmonicCNN model:
     print("Testing full Harmonic CNN model:")
 
@@ -46,12 +46,11 @@ if __name__ == "__main__":
 
     # test forward pass:
     print("Testing forward pass...")
-    full_model.eval()
     x = torch.rand((batch_size, AUDIO_LENGTH))
     x = x.to(device)
     output = full_model(x)
     assert tuple(output.size()) == (batch_size, N_CLASSES), "Error with shape of forward pass output."
-    
+
     # create model summary, if selected:
     if model_summaries:
         print("Creating model summary...")
@@ -86,7 +85,6 @@ if __name__ == "__main__":
 
     print("\nTesting forward pass...")
     # test forward pass:
-    embed_model.eval()
     print("Input size: {}".format(tuple(x.size())))
     output = embed_model(x)
     print("Output size: {}".format(tuple(output.size())))
