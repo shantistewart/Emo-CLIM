@@ -94,6 +94,9 @@ class Image2Music(LightningModule):
         # encode each modality with backbone models:
         images_enc = self.image_backbone(images)
         audios_enc = self.audio_backbone(audios)
+        # convert to float32 datatype (if not already):
+        images_enc = images_enc.float()     # TODO: Double-check that this is ok for CLIP outputs.
+        audios_enc = audios_enc.float()
 
         # project to joint multimodal embedding space:
         image_embeds = self.image_projector(images_enc)

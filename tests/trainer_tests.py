@@ -30,8 +30,7 @@ IMAGE_EMBED_DIM = 512
 SAMPLE_RATE = 16000
 
 # script options:
-# device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("cpu")     # TODO: Figure out why dtype error occurs with GPU.
-device = torch.device("cpu")
+device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("cpu")
 # for audio backbone model:
 audio_backbone_name = "ShortChunk"     # or "HarmonicCNN"
 if audio_backbone_name == "ShortChunk":
