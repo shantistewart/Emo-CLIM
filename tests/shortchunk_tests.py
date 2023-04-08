@@ -19,8 +19,6 @@ batch_size = 16
 # model options:
 pretrained_full_model_path = "/proj/systewar/pretrained_models/music_tagging/msd/short_chunk_resnet/best_model.pth"
 last_layer_embed = "layer7"
-shrink_freq = True
-shrink_time = True
 pool_type = "max"
 # for model summaries:
 model_summaries = True
@@ -38,11 +36,11 @@ if __name__ == "__main__":
     # test full Short-Chunk CNN ResNet model:
     print("Testing full Short-Chunk CNN ResNet model:")
 
-    # load pretrained full Harmonic CNN model:
+    # load pretrained full Short-Chunk CNN ResNet model:
     full_model = ShortChunkCNN_Res()
     full_model.load_state_dict(torch.load(pretrained_full_model_path, map_location=device))
     full_model.to(device)
-
+    
     # test forward pass:
     print("Testing forward pass...")
     x = torch.rand((batch_size, AUDIO_LENGTH))
@@ -68,7 +66,7 @@ if __name__ == "__main__":
 
     # test ShortChunkCNNEmbeddings model:
     print("\n\nTesting ShortChunkCNNEmbeddings model:")
-
+    
     # create ShortChunkCNNEmbeddings model:
     x = torch.rand((batch_size, AUDIO_LENGTH))
     x = x.to(device)
@@ -76,8 +74,6 @@ if __name__ == "__main__":
         full_model,
         sample_input=x,
         last_layer=last_layer_embed,
-        shrink_freq=shrink_freq,
-        shrink_time=shrink_time,
         pool_type=pool_type
     )
     embed_model.to(device)
@@ -89,12 +85,7 @@ if __name__ == "__main__":
     print("Output size: {}".format(tuple(output.size())))
 
     # tests:
-    if shrink_freq == True and shrink_time == True:
-        assert len(tuple(output.size())) == 2, "Error with shape of forward pass output."
-    elif (shrink_freq == True and shrink_time == False) or (shrink_freq == False and shrink_time == True):
-        assert len(tuple(output.size())) == 3, "Error with shape of forward pass output."
-    else:
-        assert len(tuple(output.size())) == 4, "Error with shape of forward pass output."
+    assert len(tuple(output.size())) == 2, "Error with shape of forward pass output."
     assert output.size(dim=0) == batch_size, "Error with shape of forward pass output."
 
     # create model summary, if selected:

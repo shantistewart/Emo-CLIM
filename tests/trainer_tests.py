@@ -11,8 +11,8 @@ from climur.dataloaders.imac_images import IMACImages
 from climur.dataloaders.audioset import AudioSetMood
 from climur.dataloaders.multimodal import Multimodal
 from climur.models.image_backbones import CLIPModel
-from climur.models.audio_backbones import HarmonicCNNEmbeddings
-from climur.models.audio_model_components import HarmonicCNN
+from climur.models.audio_model_components import ShortChunkCNN_Res, HarmonicCNN
+from climur.models.audio_backbones import ShortChunkCNNEmbeddings, HarmonicCNNEmbeddings
 from climur.trainers.image2music import Image2Music
 
 
@@ -25,20 +25,24 @@ AUDIOSET_METADATA_FILE = "metadata_unbalanced_train.csv"
 # image constants:
 IMAGE_CHANNELS = 3
 IMAGE_HEIGHT, IMAGE_WIDTH = 224, 224
-IMAGE_EMBED_SIZE = 512
+IMAGE_EMBED_DIM = 512
 # audio constants:
 SAMPLE_RATE = 16000
-AUDIO_CLIP_LENGTH = 5 * SAMPLE_RATE     # 5.0 seconds
-AUDIO_EMBED_SIZE = 256
 
 # script options:
 # device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("cpu")     # TODO: Figure out why dtype error occurs with GPU.
 device = torch.device("cpu")
 # for audio backbone model:
-pretrained_audio_backbone_path = "/proj/systewar/pretrained_models/music_tagging/msd/harmonic_cnn/best_model.pth"
+audio_backbone_name = "ShortChunk"     # or "HarmonicCNN"
+if audio_backbone_name == "ShortChunk":
+    audio_clip_length = 59049     # ~3.69 seconds
+    audio_embed_dim = 512
+    pretrained_audio_backbone_path = "/proj/systewar/pretrained_models/music_tagging/msd/short_chunk_resnet/best_model.pth"
+elif audio_backbone_name == "HarmonicCNN":
+    audio_clip_length = 5 * SAMPLE_RATE     # 5.0 seconds
+    audio_embed_dim = 256
+    pretrained_audio_backbone_path = "/proj/systewar/pretrained_models/music_tagging/msd/harmonic_cnn/best_model.pth"
 last_layer_embed = "layer7"
-shrink_freq = True
-shrink_time = True
 pool_type = "max"
 # for full model:
 joint_embed_dim = 128
@@ -66,21 +70,37 @@ if __name__ == "__main__":
     image_backbone = CLIPModel(orig_clip_model)
     image_backbone.to(device)
 
-    # load pretrained full Harmonic CNN model:
-    full_hcnn_model = HarmonicCNN()
-    full_hcnn_model.load_state_dict(torch.load(pretrained_audio_backbone_path, map_location=device))
-    full_hcnn_model.to(device)
-    # create HarmonicCNNEmbeddings model:
-    sample_audio_input = torch.rand((batch_size, AUDIO_CLIP_LENGTH))
+    # set up audio backbone model:
+    sample_audio_input = torch.rand((batch_size, audio_clip_length))
     sample_audio_input = sample_audio_input.to(device)
-    audio_backbone = HarmonicCNNEmbeddings(
-        full_hcnn_model,
-        sample_input=sample_audio_input,
-        last_layer=last_layer_embed,
-        shrink_freq=shrink_freq,
-        shrink_time=shrink_time,
-        pool_type=pool_type
-    )
+    if audio_backbone_name == "ShortChunk":
+        # load pretrained full Short-Chunk CNN ResNet model:
+        full_audio_backbone = ShortChunkCNN_Res()
+        full_audio_backbone.load_state_dict(torch.load(pretrained_audio_backbone_path, map_location=device))
+        full_audio_backbone.to(device)
+        # create wrapper model:
+        audio_backbone = ShortChunkCNNEmbeddings(
+            full_audio_backbone,
+            sample_input=sample_audio_input,
+            last_layer=last_layer_embed,
+            pool_type=pool_type
+        )
+    
+    elif audio_backbone_name == "HarmonicCNN":
+        # load pretrained full Harmonic CNN model:
+        full_audio_backbone = HarmonicCNN()
+        full_audio_backbone.load_state_dict(torch.load(pretrained_audio_backbone_path, map_location=device))
+        full_audio_backbone.to(device)
+        # create wrapper model:
+        audio_backbone = HarmonicCNNEmbeddings(
+            full_audio_backbone,
+            sample_input=sample_audio_input,
+            last_layer=last_layer_embed,
+            pool_type=pool_type
+        )
+    
+    else:
+        raise ValueError("{} model not supported".format(audio_backbone_name))
     audio_backbone.to(device)
 
 
@@ -101,7 +121,7 @@ if __name__ == "__main__":
     audio_dataset = AudioSetMood(
         root=AUDIOSET_DATA_ROOT,
         metadata_file_name=AUDIOSET_METADATA_FILE,
-        clip_length_samples=AUDIO_CLIP_LENGTH,
+        clip_length_samples=audio_clip_length,
         sample_rate=SAMPLE_RATE
     )
     # create multimodal dataset:
@@ -129,7 +149,7 @@ if __name__ == "__main__":
         elif key == "image":
             assert tuple(value.size()) == (batch_size, IMAGE_CHANNELS, IMAGE_HEIGHT, IMAGE_WIDTH), "Error with shape of {}".format(key)
         elif key == "audio":
-            assert tuple(value.size()) == (batch_size, AUDIO_CLIP_LENGTH), "Error with shape of {}".format(key)
+            assert tuple(value.size()) == (batch_size, audio_clip_length), "Error with shape of {}".format(key)
         else:
             raise RuntimeError("Unexpected key in example batch dictionary.")
     
@@ -151,6 +171,8 @@ if __name__ == "__main__":
         audio_backbone=audio_backbone,
         joint_embed_dim=joint_embed_dim,
         hparams=hparams,
+        image_embed_dim=IMAGE_EMBED_DIM,
+        audio_embed_dim=audio_embed_dim,
         freeze_image_backbone=True,
         freeze_audio_backbone=True
     )

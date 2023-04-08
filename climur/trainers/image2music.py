@@ -27,7 +27,7 @@ class Image2Music(LightningModule):
             joint_embed_dim: int,
             hparams: Dict,
             image_embed_dim: int = 512,
-            audio_embed_dim: int = 256,
+            audio_embed_dim: int = 512,
             freeze_image_backbone: bool = False,
             freeze_audio_backbone: bool = False
         ) -> None:
