@@ -45,6 +45,8 @@ last_layer_embed = "layer7"
 pool_type = "max"
 # for full model:
 joint_embed_dim = 128
+normalize_image_embeds = True
+normalize_audio_embeds = True
 # for training:
 batch_size = 16
 optimizer = "Adam"
@@ -172,6 +174,8 @@ if __name__ == "__main__":
         hparams=hparams,
         image_embed_dim=IMAGE_EMBED_DIM,
         audio_embed_dim=audio_embed_dim,
+        normalize_image_embeds=normalize_image_embeds,
+        normalize_audio_embeds=normalize_audio_embeds,
         freeze_image_backbone=True,
         freeze_audio_backbone=True
     )

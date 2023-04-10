@@ -4,6 +4,7 @@
 from pytorch_lightning import LightningModule
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch import Tensor
 from typing import Dict, Tuple, Any
 
@@ -17,17 +18,21 @@ class Image2Music(LightningModule):
         image_projector (nn.Module): Image projector model.
         audio_projector (nn.Module): Audio projector model.
         joint_embed_dim (int): Dimension of joint embedding space.
-
+        normalize_image_embeds (bool): Selects whether to normalize image embeddings.
+        normalize_audio_embeds (bool): Selects whether to normalize audio embeddings.
+    
     """
 
-    def __init__(     # TODO: Add a normalization param.
+    def __init__(
             self,
             image_backbone: nn.Module,
             audio_backbone: nn.Module, 
             joint_embed_dim: int,
             hparams: Dict,
-            image_embed_dim: int = 512,
-            audio_embed_dim: int = 512,
+            image_embed_dim: int,
+            audio_embed_dim: int,
+            normalize_image_embeds: bool = True,
+            normalize_audio_embeds: bool = True,
             freeze_image_backbone: bool = False,
             freeze_audio_backbone: bool = False
         ) -> None:
@@ -38,8 +43,10 @@ class Image2Music(LightningModule):
             audio_backbone (nn.Module): Audio backbone model.
             joint_embed_dim (int): Dimension of joint embedding space.
             hparams (dict): Dictionary of hyperparameters.
-            image_embed_dim (int): Dimension of image embeddings (output of image backbone model).
-            audio_embed_dim (int): Dimension of audio embeddings (output of audio backbone model).
+            image_embed_dim (int): Dimension of image embeddings (outputs of image backbone model).
+            audio_embed_dim (int): Dimension of audio embeddings (outputs of audio backbone model).
+            normalize_image_embeds (bool): Selects whether to normalize image embeddings.
+            normalize_audio_embeds (bool): Selects whether to normalize audio embeddings.
             freeze_image_backbone (bool): Selects whether to freeze image backbone model.
             freeze_audio_backbone (bool): Selects whether to freeze audio backbone model.
         
@@ -50,6 +57,11 @@ class Image2Music(LightningModule):
         # save hyperparameters (saves to self.hparams):
         self.save_hyperparameters(hparams)
 
+        # save parameters:
+        self.normalize_image_embeds = normalize_image_embeds
+        self.normalize_audio_embeds = normalize_audio_embeds
+        self.joint_embed_dim = joint_embed_dim
+
         # save image backbone model and freeze if selected:
         self.image_backbone = image_backbone
         if freeze_image_backbone:
@@ -59,20 +71,17 @@ class Image2Music(LightningModule):
         if freeze_audio_backbone:
             self.audio_backbone.requires_grad_(False)
         
-        # save other params:
-        self.joint_embed_dim = joint_embed_dim
-
         # create projectors:
         projector_hidden_dim = max(image_embed_dim, audio_embed_dim)
         self.image_projector = nn.Sequential(
-            nn.Linear(in_features=image_embed_dim, out_features=projector_hidden_dim, bias=False),     # TODO: Maybe change to bias=True?
+            nn.Linear(in_features=image_embed_dim, out_features=projector_hidden_dim, bias=True),     # TODO: Maybe also try bias=False.
             nn.ReLU(),
-            nn.Linear(in_features=projector_hidden_dim, out_features=joint_embed_dim, bias=False)
+            nn.Linear(in_features=projector_hidden_dim, out_features=joint_embed_dim, bias=True)
         )
         self.audio_projector = nn.Sequential(
-            nn.Linear(in_features=audio_embed_dim, out_features=projector_hidden_dim, bias=False),     # TODO: Maybe change to bias=True?
+            nn.Linear(in_features=audio_embed_dim, out_features=projector_hidden_dim, bias=True),     # TODO: Maybe also try bias=False.
             nn.ReLU(),
-            nn.Linear(in_features=projector_hidden_dim, out_features=joint_embed_dim, bias=False)
+            nn.Linear(in_features=projector_hidden_dim, out_features=joint_embed_dim, bias=True)
         )
     
     def forward(self, images: Tensor, audios: Tensor) -> Tuple[Tensor, Tensor]:
@@ -97,10 +106,18 @@ class Image2Music(LightningModule):
         # convert to float32 datatype (if not already):
         images_enc = images_enc.float()     # TODO: Double-check that this is ok for CLIP outputs.
         audios_enc = audios_enc.float()
-
+        # L2-normalize embeddings if selected:
+        if self.normalize_image_embeds:
+            images_enc = F.normalize(images_enc, p=2, dim=-1)
+        if self.normalize_audio_embeds:
+            audios_enc = F.normalize(audios_enc, p=2, dim=-1)
+        
         # project to joint multimodal embedding space:
         image_embeds = self.image_projector(images_enc)
         audio_embeds = self.audio_projector(audios_enc)
+        # L2-normalize embeddings:
+        image_embeds = F.normalize(image_embeds, p=2, dim=-1)
+        audio_embeds = F.normalize(audio_embeds, p=2, dim=-1)
 
         return image_embeds, audio_embeds
     
