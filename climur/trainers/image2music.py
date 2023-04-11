@@ -190,7 +190,7 @@ class Image2Music(LightningModule):
             batch_idx (int): Batch index (unused).
         
         Returns:
-            loss (torch.Tensor): Loss for batch (singleton Tensor).
+            loss (torch.Tensor): SupCon loss.
         """
 
         # unpack batch:
