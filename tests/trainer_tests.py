@@ -49,8 +49,8 @@ joint_embed_dim = 128
 normalize_image_embeds = True
 normalize_audio_embeds = True
 # for training:
-loss_temp = 0.07
-batch_size = 16
+loss_temperature = 0.07
+batch_size = 64
 optimizer = "Adam"
 learn_rate = 0.001
 verbose = True
@@ -166,7 +166,7 @@ if __name__ == "__main__":
     
     # create full model:
     hparams = {
-        "loss_temp": loss_temp,
+        "loss_temperature": loss_temperature,
         "optimizer": optimizer,
         "learn_rate": learn_rate
     }
@@ -215,6 +215,14 @@ if __name__ == "__main__":
     assert type(train_loss) == Tensor, "Error with return type."
     assert len(tuple(train_loss.size())) == 0, "Error with return shape."
     print("Training loss: {}".format(train_loss))
+
+    # test validation_step() method:
+    if verbose:
+        print("\nTesting validation_step() method...")
+    val_loss = full_model.validation_step(example_batch, 0)
+    assert type(val_loss) == Tensor, "Error with return type."
+    assert len(tuple(val_loss.size())) == 0, "Error with return shape."
+    print("Validation loss: {}".format(val_loss))
 
     # test configure_optimizers() method:
     if verbose:

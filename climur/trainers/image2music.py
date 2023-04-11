@@ -12,6 +12,7 @@ from climur.losses.original_supcon import SupConLoss
 
 
 # TEMP:
+TESTING = True
 device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("cpu")
 
 
@@ -92,7 +93,7 @@ class Image2Music(LightningModule):
         )
 
         # create loss function:
-        self.criterion = SupConLoss(temperature=self.hparams.loss_temp)
+        self.criterion = SupConLoss(temperature=self.hparams.loss_temperature)
     
     def forward(self, images: Tensor, audios: Tensor) -> Tuple[Tensor, Tensor]:
         """Forward pass.
@@ -147,6 +148,7 @@ class Image2Music(LightningModule):
             batch_idx (int): Batch index (unused).
         
         Returns:
+            loss (torch.Tensor): SupCon loss.
         """
 
         # unpack batch:
@@ -156,11 +158,12 @@ class Image2Music(LightningModule):
         audio_labels = batch["audio_label"]
 
         # TEMP:
-        images = images.to(device)
-        image_labels = image_labels.to(device)
-        audios = audios.to(device)
-        audio_labels = audio_labels.to(device)
-
+        if TESTING:
+            images = images.to(device)
+            image_labels = image_labels.to(device)
+            audios = audios.to(device)
+            audio_labels = audio_labels.to(device)
+        
         # forward pass:
         image_embeds, audio_embeds = self.forward(images, audios)
 
@@ -174,18 +177,53 @@ class Image2Music(LightningModule):
 
         # TODO: Adapt original SupCon code to multimodal case.
 
+        # log training losses:
+        self.log("train_loss", loss)
+
         return loss
     
     def validation_step(self, batch: Dict, batch_idx: int) -> Tensor:
         """Validation step.
 
         Args:
-
+            batch (dict): Batch dictionary with keys ("image", "image_label", "audio", "audio_label").
+            batch_idx (int): Batch index (unused).
+        
         Returns:
+            loss (torch.Tensor): Loss for batch (singleton Tensor).
         """
 
-        pass
+        # unpack batch:
+        images = batch["image"]
+        image_labels = batch["image_label"]
+        audios = batch["audio"]
+        audio_labels = batch["audio_label"]
 
+        # TEMP:
+        if TESTING:
+            images = images.to(device)
+            image_labels = image_labels.to(device)
+            audios = audios.to(device)
+            audio_labels = audio_labels.to(device)
+        
+        # forward pass:
+        image_embeds, audio_embeds = self.forward(images, audios)
+
+        # TEMP——compute SupCon loss using original code:
+        all_embeds = torch.cat((image_embeds, audio_embeds), dim=0)
+        all_labels = torch.cat((image_labels, audio_labels), dim=0)
+        # insert views dimension (1 view per sample for now):
+        all_embeds = all_embeds.unsqueeze(dim=1)
+        # compute loss:
+        loss = self.criterion(all_embeds, labels=all_labels)
+
+        # TODO: Adapt original SupCon code to multimodal case.
+
+        # log validation losses:
+        self.log("val_loss", loss)
+
+        return loss
+    
     def configure_optimizers(self) -> Any:     # TODO: Maybe add a learning rate scheduler.
         """Configures optimizer.
 
