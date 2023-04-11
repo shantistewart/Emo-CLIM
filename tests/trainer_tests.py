@@ -13,7 +13,7 @@ from climur.dataloaders.audioset import AudioSetMood
 from climur.dataloaders.multimodal import Multimodal
 from climur.models.image_backbones import CLIPModel
 from climur.models.audio_model_components import ShortChunkCNN_Res, HarmonicCNN
-from climur.models.audio_backbones import ShortChunkCNNEmbeddings, HarmonicCNNEmbeddings
+from climur.models.audio_backbones import ShortChunkCNNEmbeddings, HarmonicCNNEmbeddings, SHORTCHUNK_INPUT_LENGTH, HARMONIC_CNN_INPUT_LENGTH
 from climur.trainers.image2music import Image2Music
 
 
@@ -35,11 +35,11 @@ device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("
 # for audio backbone model:
 audio_backbone_name = "ShortChunk"     # or "HarmonicCNN"
 if audio_backbone_name == "ShortChunk":
-    audio_clip_length = 59049     # ~3.69 seconds
+    audio_clip_length = SHORTCHUNK_INPUT_LENGTH     # ~3.69 seconds
     audio_embed_dim = 512
     pretrained_audio_backbone_path = "/proj/systewar/pretrained_models/music_tagging/msd/short_chunk_resnet/best_model.pth"
 elif audio_backbone_name == "HarmonicCNN":
-    audio_clip_length = 5 * SAMPLE_RATE     # 5.0 seconds
+    audio_clip_length = HARMONIC_CNN_INPUT_LENGTH     # 5.0 seconds
     audio_embed_dim = 256
     pretrained_audio_backbone_path = "/proj/systewar/pretrained_models/music_tagging/msd/harmonic_cnn/best_model.pth"
 last_layer_embed = "layer7"

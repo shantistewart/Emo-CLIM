@@ -5,6 +5,11 @@ import torch.nn as nn
 from torch import Tensor
 
 
+# audio input lengths (in samples) each model:
+SHORTCHUNK_INPUT_LENGTH = 59049       # ~3.69 seconds
+HARMONIC_CNN_INPUT_LENGTH = 80000     # 5.0 seconds
+
+
 class ShortChunkCNNEmbeddings(nn.Module):
     """Wrapper class to extract embeddings from Short-Chunk CNN ResNet model. Reference: "Evaluation of CNN-based Automatic Music Tagging Models", Won et al., 2020.
 

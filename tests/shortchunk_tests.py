@@ -5,12 +5,12 @@ import os
 import torch
 import torchinfo
 import warnings
-from climur.models.audio_backbones import ShortChunkCNNEmbeddings
+from climur.models.audio_backbones import ShortChunkCNNEmbeddings, SHORTCHUNK_INPUT_LENGTH
 from climur.models.audio_model_components import ShortChunkCNN_Res
 
 
 # constants:
-AUDIO_LENGTH = 59049     # ~3.69 seconds
+AUDIO_LENGTH = SHORTCHUNK_INPUT_LENGTH     # ~3.69 seconds
 N_CLASSES = 50
 
 # script options:

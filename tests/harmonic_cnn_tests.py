@@ -5,13 +5,12 @@ import os
 import torch
 import torchinfo
 import warnings
-from climur.models.audio_backbones import HarmonicCNNEmbeddings
+from climur.models.audio_backbones import HarmonicCNNEmbeddings, HARMONIC_CNN_INPUT_LENGTH
 from climur.models.audio_model_components import HarmonicCNN
 
 
 # constants:
-SAMPLE_RATE = 16000
-AUDIO_LENGTH = 5 * SAMPLE_RATE     # 5.0 seconds
+AUDIO_LENGTH = HARMONIC_CNN_INPUT_LENGTH     # 5.0 seconds
 N_CLASSES = 50
 
 # script options:
