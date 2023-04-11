@@ -1,0 +1,55 @@
+
+
+# Configs for training.
+
+
+---
+# dataset options:
+dataset:
+  image_dataset_dir: "/proj/systewar/datasets/IMAC/image_dataset"
+  audio_dataset_dir: "/proj/systewar/datasets/audioset_music_mood"
+  image_dataset_val_fract: 0.1
+  sample_rate: 16000
+  random_seed: 42
+
+# data augmentation options (TODO):
+
+# image backbone options:
+image_backbone:
+  embed_dim: 512
+# audio backbone options:
+audio_backbone:
+  model_name: "ShortChunk"     # or "HarmonicCNN"
+  pretrained_model_path: "/proj/systewar/pretrained_models/music_tagging/msd/short_chunk_resnet/best_model.pth"
+  embed_dim: 512
+  last_layer_embed: "layer7"
+  pool_type: "max"
+
+# full model options:
+full_model:
+  joint_embed_dim: 128
+  normalize_image_embeds: true
+  normalize_audio_embeds: true
+  freeze_image_backbone: true
+  freeze_audio_backbone: true
+
+# training options:
+training:
+  loss_temperature: 0.07
+  batch_size: 256
+  max_epochs: 20
+  optimizer: "Adam"
+  learn_rate: 0.001
+  val_check_interval: 0.5     # how often to check validation set within a single training epoch
+  n_workers: 4
+  gpus: [1]
+
+# logging options:
+# note: logs are saved to log_dir/experiment_name/experiment_version/
+logging:
+  log_dir: "/home/systewar/CLIMuR/train_logs"
+  experiment_name: "initial_tests"
+  experiment_version: null     # automatic versioning if set to null (recommended)
+  log_every_n_steps: 20     # how often to log
+...
+

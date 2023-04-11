@@ -12,7 +12,7 @@ from climur.losses.original_supcon import SupConLoss
 
 
 # TEMP:
-TESTING = True
+TESTING = False
 device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("cpu")
 
 
