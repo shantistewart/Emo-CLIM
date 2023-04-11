@@ -8,6 +8,12 @@ import torch.nn.functional as F
 from torch import Tensor
 from typing import Dict, Tuple, Any
 
+from climur.losses.original_supcon import SupConLoss
+
+
+# TEMP:
+device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("cpu")
+
 
 class Image2Music(LightningModule):
     """LightningModule class for image-music supervised contrastive learning.
@@ -17,6 +23,7 @@ class Image2Music(LightningModule):
         audio_backbone (nn.Module): Audio backbone model.
         image_projector (nn.Module): Image projector model.
         audio_projector (nn.Module): Audio projector model.
+        criterion (PyTorch loss): Loss function.
         joint_embed_dim (int): Dimension of joint embedding space.
         normalize_image_embeds (bool): Selects whether to normalize image embeddings.
         normalize_audio_embeds (bool): Selects whether to normalize audio embeddings.
@@ -83,6 +90,9 @@ class Image2Music(LightningModule):
             nn.ReLU(),
             nn.Linear(in_features=projector_hidden_dim, out_features=joint_embed_dim, bias=True)
         )
+
+        # create loss function:
+        self.criterion = SupConLoss(temperature=self.hparams.loss_temp)
     
     def forward(self, images: Tensor, audios: Tensor) -> Tuple[Tensor, Tensor]:
         """Forward pass.
@@ -125,12 +135,47 @@ class Image2Music(LightningModule):
         """Training step.
 
         Args:
-
+            batch (dict): Batch dictionary with keys/values:
+                "image": (Tensor) Images.
+                    shape: (batch_size, image_channels, image_height, image_width)
+                "image_label" (Tensor): Image emotion label indices.
+                    shape: (batch_size, )
+                "audio": (Tensor) Audio clips.
+                    shape: (batch_size, audio_clip_length)
+                "audio_label" (Tensor): Audio emotion label indices.
+                    shape: (batch_size, )
+            batch_idx (int): Batch index (unused).
+        
         Returns:
         """
 
-        pass
+        # unpack batch:
+        images = batch["image"]
+        image_labels = batch["image_label"]
+        audios = batch["audio"]
+        audio_labels = batch["audio_label"]
 
+        # TEMP:
+        images = images.to(device)
+        image_labels = image_labels.to(device)
+        audios = audios.to(device)
+        audio_labels = audio_labels.to(device)
+
+        # forward pass:
+        image_embeds, audio_embeds = self.forward(images, audios)
+
+        # TEMP——compute SupCon loss using original code:
+        all_embeds = torch.cat((image_embeds, audio_embeds), dim=0)
+        all_labels = torch.cat((image_labels, audio_labels), dim=0)
+        # insert views dimension (1 view per sample for now):
+        all_embeds = all_embeds.unsqueeze(dim=1)
+        # compute loss:
+        loss = self.criterion(all_embeds, labels=all_labels)
+
+        # TODO: Adapt original SupCon code to multimodal case.
+
+        return loss
+    
     def validation_step(self, batch: Dict, batch_idx: int) -> Tensor:
         """Validation step.
 

@@ -4,6 +4,7 @@
 import os
 import torch
 from torch.utils.data import DataLoader
+from torch import Tensor
 import torchinfo
 import clip
 
@@ -48,6 +49,7 @@ joint_embed_dim = 128
 normalize_image_embeds = True
 normalize_audio_embeds = True
 # for training:
+loss_temp = 0.07
 batch_size = 16
 optimizer = "Adam"
 learn_rate = 0.001
@@ -141,10 +143,10 @@ if __name__ == "__main__":
         drop_last=True
     )
     # test example batch:
-    batch_example = next(iter(dataloader))
-    assert type(batch_example) == dict, "Example batch is of incorrect data type.."
-    assert len(batch_example) == 4, "Example batch has incorrect size."
-    for key, value in batch_example.items():
+    example_batch = next(iter(dataloader))
+    assert type(example_batch) == dict, "Example batch is of incorrect data type.."
+    assert len(example_batch) == 4, "Example batch has incorrect size."
+    for key, value in example_batch.items():
         if key == "image_label" or key == "audio_label":
             assert tuple(value.size()) == (batch_size, ), "Error with shape of {}".format(key)
         elif key == "image":
@@ -164,6 +166,7 @@ if __name__ == "__main__":
     
     # create full model:
     hparams = {
+        "loss_temp": loss_temp,
         "optimizer": optimizer,
         "learn_rate": learn_rate
     }
@@ -191,8 +194,8 @@ if __name__ == "__main__":
         print()
         print("\nTesting forward() method...\n")
     # unpack batch:
-    images = batch_example["image"].to(device)
-    audios = batch_example["audio"].to(device)
+    images = example_batch["image"].to(device)
+    audios = example_batch["audio"].to(device)
     if verbose:
         print("Input images size: {}".format(tuple(images.size())))
         print("Input audio clips size: {}".format(tuple(audios.size())))
@@ -204,6 +207,14 @@ if __name__ == "__main__":
         print("Audio embeddings size: {}".format(tuple(audio_embeds.size())))
     assert tuple(image_embeds.size()) == (batch_size, joint_embed_dim), "Error with shape of image embeddings."
     assert tuple(audio_embeds.size()) == (batch_size, joint_embed_dim), "Error with shape of image embeddings."
+
+    # test training_step() method:
+    if verbose:
+        print("\nTesting training_step() method...")
+    train_loss = full_model.training_step(example_batch, 0)
+    assert type(train_loss) == Tensor, "Error with return type."
+    assert len(tuple(train_loss.size())) == 0, "Error with return shape."
+    print("Training loss: {}".format(train_loss))
 
     # test configure_optimizers() method:
     if verbose:
