@@ -123,7 +123,7 @@ if __name__ == "__main__":
     )
     image_val_dataset = IMACImages(
         root=dataset_configs["image_dataset_dir"],
-        metadata_file_name="metadata_test.csv",     # TODO: Change to "metadata_val.csv" once validation set is created.
+        metadata_file_name="metadata_val.csv",
         preprocess=image_preprocess_transform
     )
     if verbose:
