@@ -126,9 +126,7 @@ if __name__ == "__main__":
         metadata_file_name="metadata_val.csv",
         preprocess=image_preprocess_transform
     )
-    if verbose:
-        print("Using {} images for training, {} images for validation.".format(len(image_train_dataset), len(image_val_dataset)))     # TODO: Change to effective sizes.
-    
+
     # create audio datasets:
     audio_train_dataset = AudioSetMood(
         root=dataset_configs["audio_dataset_dir"],
@@ -142,9 +140,7 @@ if __name__ == "__main__":
         clip_length_samples=audio_clip_length,
         sample_rate=dataset_configs["sample_rate"]
     )
-    if verbose:
-        print("Using {} audio clips for training, {} audio clips for validation.".format(len(audio_train_dataset), len(audio_val_dataset)))     # TODO: Change to effective sizes.
-    
+
     # create multimodal datasets:
     multimodal_train_dataset = Multimodal(
         image_dataset=image_train_dataset,
@@ -155,7 +151,8 @@ if __name__ == "__main__":
         audio_dataset=audio_val_dataset
     )
     if verbose:
-        print("Multimodal train/validation dataset sizes: {}, {}".format(len(multimodal_train_dataset), len(multimodal_val_dataset)))
+        print("Using {} images and {} audio clips for training.".format(multimodal_train_dataset.image_dataset_len, multimodal_train_dataset.audio_dataset_len))
+        print("Using {} images and {} audio clips for validation.".format(multimodal_val_dataset.image_dataset_len, multimodal_val_dataset.audio_dataset_len))
     
     # create dataloaders:
     train_loader = DataLoader(

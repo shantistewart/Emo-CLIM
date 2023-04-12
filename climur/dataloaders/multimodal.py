@@ -24,6 +24,8 @@ class Multimodal(Dataset):
     Attributes:
         image_dataset (PyTorch Dataset): Image dataset.
         audio_dataset (PyTorch Dataset): Audio dataset.
+        image_dataset_len (int): Effective size of image dataset (disregarding images with unused labels).
+        audio_dataset_len (int): Effective size of audio dataset (disregarding audio clips with unused labels).
         n_classes (int): Number of (common) emotion tag classes.
         image2audio_tag_map (dict): Dictionary mapping image dataset emotion tags to audio dataset emotion tags.
         image_tags (list): Image dataset emotion tags.
@@ -77,6 +79,15 @@ class Multimodal(Dataset):
         self.tag2audio = {}
         for tag in self.audio_tags:
             self.tag2audio[tag] = audio_dataset.metadata[audio_dataset.metadata["label"] == tag]
+
+        # compute effective image dataset length:
+        self.image_dataset_len = 0
+        for df in self.tag2image.values():
+            self.image_dataset_len += df.shape[0]
+        # compute effective audio dataset length:
+        self.audio_dataset_len = 0
+        for df in self.tag2audio.values():
+            self.audio_dataset_len += df.shape[0]
     
     def __len__(self) -> int:
         """Gets effective length of dataset.
@@ -87,17 +98,7 @@ class Multimodal(Dataset):
             dataset_len (int): Minimum of effective sizes of image and audio dataset.
         """
 
-        # compute effective image dataset length:
-        image_dataset_len = 0
-        for df in self.tag2image.values():
-            image_dataset_len += df.shape[0]
-        
-        # compute effective audio dataset length:
-        audio_dataset_len = 0
-        for df in self.tag2audio.values():
-            audio_dataset_len += df.shape[0]
-        
-        dataset_len = min(image_dataset_len, audio_dataset_len)
+        dataset_len = min(self.image_dataset_len, self.audio_dataset_len)
 
         return dataset_len
     
