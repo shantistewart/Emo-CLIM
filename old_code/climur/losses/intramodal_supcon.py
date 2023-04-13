@@ -15,14 +15,14 @@ class IntramodalSupCon(nn.Module):
     """Intra-modal SupCon loss.
 
     Attributes:
-        temperature (float): Temperature hyperparameter.
     """
 
-    def __init__(self, temperature: float = 0.07) -> None:
+    def __init__(self, temperature: float = 0.07, base_temperature: float = 0.07) -> None:
         """Initialization.
 
         Args:
-            temperature (float): Temperature hyperparameter.
+            temperature (float): Temperature for loss.
+            base_temperature (float): Base temperature for loss.
         
         Returns: None
         """
@@ -31,6 +31,7 @@ class IntramodalSupCon(nn.Module):
 
         # save parameters:
         self.temperature = temperature
+        self.base_temperature = base_temperature
     
     def forward(self, features: Tensor, labels: Tensor) -> Tensor:
         """Forward pass.
@@ -52,7 +53,7 @@ class IntramodalSupCon(nn.Module):
         batch_size = features.size(dim=0)
 
         # reshape labels: (N, ) -> (N, 1)
-        labels = labels.unsqueeze(dim=-1)
+        labels = labels.contiguous().view(-1, 1)     # TODO: Try changing to: labels.reshape(-1, 1) or labels.unsqueeze(dim=-1)
         assert labels.shape[0] == batch_size, "Error reshaping labels."
 
         # create mask:
@@ -79,8 +80,17 @@ class IntramodalSupCon(nn.Module):
         mask = mask.repeat(anchor_count, contrast_count)
 
         # mask-out self-contrast pairs:
-        logits_mask = 1 - torch.eye(mask.size(dim=0))     # shape: (n_views * N, n_views * N)
+        logits_mask = torch.scatter(     # shape: (n_views * N, n_views * N)
+            torch.ones_like(mask),     # input (shape: (n_views * N, n_views * N))
+            1,                         # dim
+            torch.arange(batch_size * anchor_count).view(-1, 1).to(device),     # index (shape: (n_views * N, 1))
+            0                          # src
+        )
+        # TODO: Try below code instead:
+        """
+        logits_mask = 1 - torch.eye(mask.size(dim=0))
         logits_mask = logits_mask.to(device)
+        """
         mask = logits_mask * mask     # shape: (n_views * N, n_views * N)
 
         # compute denominator inside log: exp(z_i * z_k / tau), for all i, for all k != i
@@ -92,15 +102,20 @@ class IntramodalSupCon(nn.Module):
         # compute log probabilities (divide anchor logits by denominator and take log):
         log_prob = logits - torch.log(exp_logits_sum)     # shape: (n_views * N, n_views * N)
 
+        # compute mean of log probabilities over positive pairs (masking out negative pairs) and divide by size of positive pair sets:
+        mean_log_prob_pos = (mask * log_prob).sum(1) / mask.sum(1)     # shape: (n_views * N, )
+        # TODO: Try below code instead:
+        """
         # compute mean of log probabilities over positive pairs (masking out negative pairs):
         mean_log_prob_pos = (mask * log_prob).sum(dim=1)     # shape: (n_views * N, )
         # divide by size of positive pair sets:
         mean_log_prob_pos = mean_log_prob_pos / mask.sum(dim=1)     # shape: (n_views * N, )
+        """
 
-        # flip sign:
-        loss = -1 * mean_log_prob_pos     # shape: (n_views * N, )
+        # normalize by temperature ratio and flip sign:
+        loss = - (self.temperature / self.base_temperature) * mean_log_prob_pos     # shape: (n_views * N, )
         # sum over anchors (z_i dimension):
-        loss = loss.mean()
+        loss = loss.view(anchor_count, batch_size).mean()     # TODO: Try changing to: loss.mean()
 
         return loss
 

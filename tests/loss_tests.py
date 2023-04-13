@@ -10,7 +10,6 @@ from climur.losses.intramodal_supcon import IntramodalSupCon
 device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("cpu")
 # for multimodal SupCon loss:
 temperature = 0.07
-base_temperature = 0.07
 n_classes = 3
 # input dimensions:
 batch_size = 16
@@ -26,10 +25,7 @@ if __name__ == "__main__":
     print("Testing IntramodalSupCon class:")
 
     # create loss:
-    criterion = IntramodalSupCon(
-        temperature=temperature,
-        base_temperature=base_temperature
-    )
+    criterion = IntramodalSupCon(temperature=temperature)
     criterion.to(device)
 
     # test forward pass:
