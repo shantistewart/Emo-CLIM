@@ -4,11 +4,12 @@
 import torch
 from torch import Tensor
 from climur.losses.intramodal_supcon import IntraModalSupCon
+from climur.losses.crossmodal_supcon import CrossModalSupCon
 
 
 # script options:
 device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("cpu")
-# for multimodal SupCon loss:
+# for SupCon losses:
 temperature = 0.07
 n_classes = 3
 # input dimensions:
@@ -34,6 +35,25 @@ if __name__ == "__main__":
     labels = torch.randint(low=0, high=n_classes, size=(batch_size, )).to(device)
     print("Embeddings size: {}".format(tuple(embeds.size())))
     loss = criterion(embeds, labels)
+    assert type(loss) == Tensor, "Loss is of incorrect data type."
+    assert len(tuple(loss.size())) == 0, "Loss has incorrect shape."
+
+
+    # test CrossModalSupCon class:
+    print("\n\nTesting CrossModalSupCon class:")
+
+    # create loss:
+    criterion = CrossModalSupCon(temperature=temperature)
+    criterion.to(device)
+
+    # test forward pass:
+    print("\nTesting forward pass...")
+    embeds_M1 = torch.rand((batch_size, n_views, embed_dim)).to(device)
+    labels_M1 = torch.randint(low=0, high=n_classes, size=(batch_size, )).to(device)
+    embeds_M2 = torch.rand((batch_size, n_views, embed_dim)).to(device)
+    labels_M2 = torch.randint(low=0, high=n_classes, size=(batch_size, )).to(device)
+    print("Embeddings size: {}".format(tuple(embeds_M1.size())))
+    loss = criterion(embeds_M1, labels_M1, embeds_M2, labels_M2)
     assert type(loss) == Tensor, "Loss is of incorrect data type."
     assert len(tuple(loss.size())) == 0, "Loss has incorrect shape."
 
