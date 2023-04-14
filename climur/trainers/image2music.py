@@ -27,7 +27,7 @@ class Image2Music(LightningModule):
         audio2audio_supcon (nn.Module): Audio-to-audio SupCon loss criterion.
         image2audio_supcon (nn.Module): Image-to-audio SupCon loss criterion.
         audio2image_supcon (nn.Module): Audio-to-image SupCon loss criterion.
-        torch_device (PyTorch device): PyTorch device (only used for testing).
+        torch_device (PyTorch device): PyTorch device.
     """
 
     def __init__(
@@ -94,11 +94,11 @@ class Image2Music(LightningModule):
             nn.Linear(in_features=projector_hidden_dim, out_features=joint_embed_dim, bias=True)
         )
 
-        # create loss functions:     # TODO: Change self.hparams.loss_temperature to hparams["loss_temperature"]
-        self.image2image_supcon = IntraModalSupCon(temperature=self.hparams.loss_temperature, device=device)
-        self.audio2audio_supcon = IntraModalSupCon(temperature=self.hparams.loss_temperature, device=device)
-        self.image2audio_supcon = CrossModalSupCon(temperature=self.hparams.loss_temperature, device=device)
-        self.audio2image_supcon = CrossModalSupCon(temperature=self.hparams.loss_temperature, device=device)
+        # create loss functions:
+        self.image2image_supcon = IntraModalSupCon(temperature=hparams["loss_temperature"], device=device)
+        self.audio2audio_supcon = IntraModalSupCon(temperature=hparams["loss_temperature"], device=device)
+        self.image2audio_supcon = CrossModalSupCon(temperature=hparams["loss_temperature"], device=device)
+        self.audio2image_supcon = CrossModalSupCon(temperature=hparams["loss_temperature"], device=device)
     
     def forward(self, images: Tensor, audios: Tensor) -> Tuple[Tensor, Tensor]:
         """Forward pass.
