@@ -3,7 +3,7 @@
 
 import torch
 from torch import Tensor
-from climur.losses.intramodal_supcon import IntramodalSupCon
+from climur.losses.intramodal_supcon import IntraModalSupCon
 
 
 # script options:
@@ -21,11 +21,11 @@ if __name__ == "__main__":
     print("\n\n")
 
 
-    # test IntramodalSupCon class:
-    print("Testing IntramodalSupCon class:")
+    # test IntraModalSupCon class:
+    print("Testing IntraModalSupCon class:")
 
     # create loss:
-    criterion = IntramodalSupCon(temperature=temperature)
+    criterion = IntraModalSupCon(temperature=temperature)
     criterion.to(device)
 
     # test forward pass:

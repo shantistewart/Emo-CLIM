@@ -10,7 +10,7 @@ from torch import Tensor
 device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("cpu")
 
 
-class IntramodalSupCon(nn.Module):
+class IntraModalSupCon(nn.Module):
     """Intra-modal SupCon loss.
 
     Attributes:
@@ -26,7 +26,7 @@ class IntramodalSupCon(nn.Module):
         Returns: None
         """
 
-        super(IntramodalSupCon, self).__init__()
+        super(IntraModalSupCon, self).__init__()
 
         # save parameters:
         self.temperature = temperature
