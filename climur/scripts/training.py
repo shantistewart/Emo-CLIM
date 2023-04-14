@@ -105,7 +105,6 @@ if __name__ == "__main__":
     
     else:
         raise ValueError("{} model not supported".format(audio_backbone_configs["model_name"]))
-    # audio_backbone.to(device)
 
 
     # ------------
@@ -182,15 +181,14 @@ if __name__ == "__main__":
         image_backbone=image_backbone,
         audio_backbone=audio_backbone,
         joint_embed_dim=full_model_configs["joint_embed_dim"],
-        hparams=training_configs,     # TODO: Change to include all configs (need to modify Image2Music class).
         image_embed_dim=image_backbone_configs["embed_dim"],
         audio_embed_dim=audio_backbone_configs["embed_dim"],
+        hparams=training_configs,     # TODO: Maybe change to include all configs (need to modify Image2Music class).
         normalize_image_embeds=full_model_configs["normalize_image_embeds"],
         normalize_audio_embeds=full_model_configs["normalize_audio_embeds"],
         freeze_image_backbone=full_model_configs["freeze_image_backbone"],
         freeze_audio_backbone=full_model_configs["freeze_audio_backbone"]
     )
-    # full_model.to(device)
 
     # create logger (logs are saved to /save_dir/name/version/):
     logger = TensorBoardLogger(

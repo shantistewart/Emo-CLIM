@@ -50,6 +50,12 @@ normalize_image_embeds = True
 normalize_audio_embeds = True
 # for training:
 loss_temperature = 0.07
+loss_weights = {
+    "image2image": 0.25,
+    "audio2audio": 0.25,
+    "image2audio": 0.25,
+    "audio2image": 0.25
+}
 batch_size = 64
 optimizer = "Adam"
 learn_rate = 0.001
@@ -167,6 +173,7 @@ if __name__ == "__main__":
     # create full model:
     hparams = {
         "loss_temperature": loss_temperature,
+        "loss_weights": loss_weights,
         "optimizer": optimizer,
         "learn_rate": learn_rate
     }
@@ -174,9 +181,9 @@ if __name__ == "__main__":
         image_backbone=image_backbone,
         audio_backbone=audio_backbone,
         joint_embed_dim=joint_embed_dim,
-        hparams=hparams,
         image_embed_dim=IMAGE_EMBED_DIM,
         audio_embed_dim=audio_embed_dim,
+        hparams=hparams,
         normalize_image_embeds=normalize_image_embeds,
         normalize_audio_embeds=normalize_audio_embeds,
         freeze_image_backbone=True,

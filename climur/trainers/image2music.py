@@ -8,7 +8,8 @@ import torch.nn.functional as F
 from torch import Tensor
 from typing import Dict, Tuple, Any
 
-from climur.losses.original_supcon import SupConLoss
+from climur.losses.intramodal_supcon import IntraModalSupCon
+from climur.losses.crossmodal_supcon import CrossModalSupCon
 
 
 # TEMP:
@@ -24,11 +25,13 @@ class Image2Music(LightningModule):
         audio_backbone (nn.Module): Audio backbone model.
         image_projector (nn.Module): Image projector model.
         audio_projector (nn.Module): Audio projector model.
-        criterion (PyTorch loss): Loss function.
         joint_embed_dim (int): Dimension of joint embedding space.
         normalize_image_embeds (bool): Selects whether to normalize image embeddings.
         normalize_audio_embeds (bool): Selects whether to normalize audio embeddings.
-    
+        image2image_supcon (nn.Module): Image-to-image SupCon loss criterion.
+        audio2audio_supcon (nn.Module): Audio-to-audio SupCon loss criterion.
+        image2audio_supcon (nn.Module): Image-to-audio SupCon loss criterion.
+        audio2image_supcon (nn.Module): Audio-to-image SupCon loss criterion.
     """
 
     def __init__(
@@ -36,9 +39,9 @@ class Image2Music(LightningModule):
             image_backbone: nn.Module,
             audio_backbone: nn.Module, 
             joint_embed_dim: int,
-            hparams: Dict,
             image_embed_dim: int,
             audio_embed_dim: int,
+            hparams: Dict,
             normalize_image_embeds: bool = True,
             normalize_audio_embeds: bool = True,
             freeze_image_backbone: bool = False,
@@ -50,9 +53,9 @@ class Image2Music(LightningModule):
             image_backbone (nn.Module): Image backbone model.
             audio_backbone (nn.Module): Audio backbone model.
             joint_embed_dim (int): Dimension of joint embedding space.
-            hparams (dict): Dictionary of hyperparameters.
             image_embed_dim (int): Dimension of image embeddings (outputs of image backbone model).
             audio_embed_dim (int): Dimension of audio embeddings (outputs of audio backbone model).
+            hparams (dict): Dictionary of hyperparameters.
             normalize_image_embeds (bool): Selects whether to normalize image embeddings.
             normalize_audio_embeds (bool): Selects whether to normalize audio embeddings.
             freeze_image_backbone (bool): Selects whether to freeze image backbone model.
@@ -78,7 +81,7 @@ class Image2Music(LightningModule):
         self.audio_backbone = audio_backbone
         if freeze_audio_backbone:
             self.audio_backbone.requires_grad_(False)
-        
+
         # create projectors:
         projector_hidden_dim = max(image_embed_dim, audio_embed_dim)
         self.image_projector = nn.Sequential(
@@ -92,8 +95,11 @@ class Image2Music(LightningModule):
             nn.Linear(in_features=projector_hidden_dim, out_features=joint_embed_dim, bias=True)
         )
 
-        # create loss function:
-        self.criterion = SupConLoss(temperature=self.hparams.loss_temperature)
+        # create loss functions:
+        self.image2image_supcon = IntraModalSupCon(temperature=self.hparams.loss_temperature)
+        self.audio2audio_supcon = IntraModalSupCon(temperature=self.hparams.loss_temperature)
+        self.image2audio_supcon = CrossModalSupCon(temperature=self.hparams.loss_temperature)
+        self.audio2image_supcon = CrossModalSupCon(temperature=self.hparams.loss_temperature)
     
     def forward(self, images: Tensor, audios: Tensor) -> Tuple[Tensor, Tensor]:
         """Forward pass.
@@ -167,20 +173,29 @@ class Image2Music(LightningModule):
         # forward pass:
         image_embeds, audio_embeds = self.forward(images, audios)
 
-        # TEMP——compute SupCon loss using original code:
-        all_embeds = torch.cat((image_embeds, audio_embeds), dim=0)
-        all_labels = torch.cat((image_labels, audio_labels), dim=0)
-        # insert views dimension (1 view per sample for now):
-        all_embeds = all_embeds.unsqueeze(dim=1)
-        # compute loss:
-        loss = self.criterion(all_embeds, labels=all_labels)
+        # insert views dimension (1 view per sample for now) for compatibility with SupCon losses:     # TODO: Change this once dataloader returns tensors with n_views dimension.
+        image_embeds = image_embeds.unsqueeze(dim=1)
+        audio_embeds = audio_embeds.unsqueeze(dim=1)
 
-        # TODO: Adapt original SupCon code to multimodal case.
+        # compute intra-modal SupCon losses:
+        image2image_loss = self.image2image_supcon(image_embeds, image_labels)
+        audio2audio_loss = self.audio2audio_supcon(audio_embeds, audio_labels)
+        # compute cross-modal SupCon losses:
+        image2audio_loss = self.image2audio_supcon(image_embeds, image_labels, audio_embeds, audio_labels)
+        audio2image_loss = self.audio2image_supcon(audio_embeds, audio_labels, image_embeds, image_labels)
+        
+        # compute weighted average of individual losses:
+        loss_weights = self.hparams.loss_weights
+        total_loss = (loss_weights["image2image"] * image2image_loss) + (loss_weights["audio2audio"] * audio2audio_loss) + (loss_weights["image2audio"] * image2audio_loss) + (loss_weights["audio2image"] * audio2image_loss)
 
         # log training losses:
-        self.log("train_loss", loss)
+        self.log("train/image2image_loss", image2image_loss)
+        self.log("train/audio2audio_loss", audio2audio_loss)
+        self.log("train/image2audio_loss", image2audio_loss)
+        self.log("train/audio2image_loss", audio2image_loss)
+        self.log("train/total_loss", total_loss)
 
-        return loss
+        return total_loss
     
     def validation_step(self, batch: Dict, batch_idx: int) -> Tensor:
         """Validation step.
@@ -209,20 +224,29 @@ class Image2Music(LightningModule):
         # forward pass:
         image_embeds, audio_embeds = self.forward(images, audios)
 
-        # TEMP——compute SupCon loss using original code:
-        all_embeds = torch.cat((image_embeds, audio_embeds), dim=0)
-        all_labels = torch.cat((image_labels, audio_labels), dim=0)
-        # insert views dimension (1 view per sample for now):
-        all_embeds = all_embeds.unsqueeze(dim=1)
-        # compute loss:
-        loss = self.criterion(all_embeds, labels=all_labels)
+        # insert views dimension (1 view per sample for now) for compatibility with SupCon losses:     # TODO: Change this once dataloader returns tensors with n_views dimension.
+        image_embeds = image_embeds.unsqueeze(dim=1)
+        audio_embeds = audio_embeds.unsqueeze(dim=1)
 
-        # TODO: Adapt original SupCon code to multimodal case.
+        # compute intra-modal SupCon losses:
+        image2image_loss = self.image2image_supcon(image_embeds, image_labels)
+        audio2audio_loss = self.audio2audio_supcon(audio_embeds, audio_labels)
+        # compute cross-modal SupCon losses:
+        image2audio_loss = self.image2audio_supcon(image_embeds, image_labels, audio_embeds, audio_labels)
+        audio2image_loss = self.audio2image_supcon(audio_embeds, audio_labels, image_embeds, image_labels)
+
+        # compute weighted average of individual losses:
+        loss_weights = self.hparams.loss_weights
+        total_loss = (loss_weights["image2image"] * image2image_loss) + (loss_weights["audio2audio"] * audio2audio_loss) + (loss_weights["image2audio"] * image2audio_loss) + (loss_weights["audio2image"] * audio2image_loss)
 
         # log validation losses:
-        self.log("val_loss", loss)
+        self.log("validation/image2image_loss", image2image_loss)
+        self.log("validation/audio2audio_loss", audio2audio_loss)
+        self.log("validation/image2audio_loss", image2audio_loss)
+        self.log("validation/audio2image_loss", audio2image_loss)
+        self.log("validation/total_loss", total_loss)
 
-        return loss
+        return total_loss
     
     def configure_optimizers(self) -> Any:     # TODO: Maybe add a learning rate scheduler.
         """Configures optimizer.

@@ -36,7 +36,12 @@ full_model:
 # training options:
 training:
   loss_temperature: 0.07
-  batch_size: 256
+  loss_weights:
+    image2image: 0.25
+    audio2audio: 0.25
+    image2audio: 0.25
+    audio2image: 0.25
+  batch_size: 128
   max_epochs: 20
   optimizer: "Adam"
   learn_rate: 0.001
