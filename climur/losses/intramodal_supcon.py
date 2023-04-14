@@ -6,7 +6,6 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
-
 # TEMP:
 device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("cpu")
 
@@ -32,11 +31,11 @@ class IntramodalSupCon(nn.Module):
         # save parameters:
         self.temperature = temperature
     
-    def forward(self, features: Tensor, labels: Tensor) -> Tensor:
+    def forward(self, embeds: Tensor, labels: Tensor) -> Tensor:
         """Forward pass.
 
         Args:
-            features (Tensor): Features (embeddings).
+            embeds (Tensor): Embeddings.
                 shape: (N, n_views, embed_dim)
             labels (Tensor): Labels.
                 shape: (N, )
@@ -46,61 +45,79 @@ class IntramodalSupCon(nn.Module):
         """
 
         # validate shapes:
-        assert len(tuple(features.size())) == 3, "Features has unexpected shape."
-        assert features.size(dim=0) == labels.size(dim=0), "Batch sizes of features and labels don't match."
-        # get batch size:
-        batch_size = features.size(dim=0)
+        assert len(tuple(embeds.size())) == 3, "Embeddings has unexpected shape."
+        assert embeds.size(dim=0) == labels.size(dim=0), "Batch sizes of embeddings and labels don't match."
+        # get input dimensions:
+        batch_size, n_views, _ = tuple(embeds.size())
+
+
+        # ------------
+        # CREATE MASKS
+        # ------------
 
         # reshape labels: (N, ) -> (N, 1)
         labels = labels.unsqueeze(dim=-1)
-        assert labels.shape[0] == batch_size, "Error reshaping labels."
 
-        # create mask:
-        mask = torch.eq(labels, labels.T).float()     # shape: (N, N)
-        mask = mask.to(device)
-        assert tuple(mask.size()) == (batch_size, batch_size), "Mask has incorrect shape."
+        # create supervised mask for positive pairs (masks out negative pairs):
+        sup_mask = torch.eq(labels, labels.T).float()     # shape: (N, N)
+        sup_mask = sup_mask.to(device)     # TODO: Try removing .to(device), since Lightning should take care of this.
+        # tile (expand) mask to account for n_views: (N, N) -> (N_new, N_new)
+        sup_mask = sup_mask.repeat(n_views, n_views)
 
-        # save n_views:
-        contrast_count = features.shape[1]
-        # remove views dimension from features: (N, n_views, embed_dim) -> (n_views * N, embed_dim)
-        contrast_feature = torch.cat(torch.unbind(features, dim=1), dim=0)
+        # create mask to mask out same-sample pairs:
+        same_mask = 1 - torch.eye(sup_mask.size(dim=0))     # shape: (N_new, N_new)
+        same_mask = same_mask.to(device)     # TODO: Try removing .to(device), since Lightning should take care of this.
 
-        # set things:
-        anchor_feature = contrast_feature
-        anchor_count = contrast_count
+        # combine supervised and same-sample masks:
+        mask = same_mask * sup_mask     # shape: (N_new, N_new)
+        assert tuple(mask.size()) == (n_views * batch_size, n_views * batch_size), "mask has incorrect shape."
 
-        # compute anchor logits: (n_views * N, embed_dim) * (embed_dim, n_views * N) -> (n_views * N, n_views * N)
-        anchor_dot_contrast = torch.div(torch.matmul(anchor_feature, contrast_feature.T), self.temperature)
+
+        # ------------------
+        # COMPUTE ALL LOGITS
+        # ------------------
+
+        # reshape embeddings: (N, n_views, embed_dim) -> (N_new, embed_dim), where N_new = n_views * N
+        embeds = torch.cat(torch.unbind(embeds, dim=1), dim=0)
+
+        # compute all logits = dot products between all pairs of embeddings (divided by temperature):
+        all_logits = torch.div(torch.matmul(embeds, embeds.T), self.temperature)     # shape: (N_new, N_new)
         # normalize for numerical stability:
-        logits_max, _ = torch.max(anchor_dot_contrast, dim=1, keepdim=True)
-        logits = anchor_dot_contrast - logits_max.detach()     # shape: (n_views * N, n_views * N)
+        all_logits_max, _ = torch.max(all_logits, dim=1, keepdim=True)
+        all_logits = all_logits - all_logits_max.detach()     # shape: (N_new, N_new)
+        assert tuple(all_logits.size()) == (n_views * batch_size, n_views * batch_size), "all_logits has incorrect shape."
 
-        # tile mask to account for n_views: (N, N) -> (n_views * N, n_views * N)
-        mask = mask.repeat(anchor_count, contrast_count)
 
-        # mask-out self-contrast pairs:
-        logits_mask = 1 - torch.eye(mask.size(dim=0))     # shape: (n_views * N, n_views * N)
-        logits_mask = logits_mask.to(device)
-        mask = logits_mask * mask     # shape: (n_views * N, n_views * N)
+        # -------------------------
+        # COMPUTE LOG PROBABILITIES
+        # -------------------------
 
-        # compute denominator inside log: exp(z_i * z_k / tau), for all i, for all k != i
-        #    note: only self-contrast pairs are masked out here
-        exp_logits = logits_mask * torch.exp(logits)     # shape: (n_views * N, n_views * N)
-        # sum over z_k dimension: (n_views * N, n_views * N) -> (n_views * N, 1)
-        exp_logits_sum = exp_logits.sum(dim=1, keepdim=True)
+        # compute exponents of all logits and mask out same-sample pairs:
+        exp_all_logits = torch.exp(all_logits)
+        exp_denom_logits = same_mask * exp_all_logits     # shape: (N_new, N_new)
+        # sum over non-anchor (z_k) dimension: (N_new, N_new) -> (N_new, 1)
+        exp_denom_logits_sum = exp_denom_logits.sum(dim=1, keepdim=True)
 
-        # compute log probabilities (divide anchor logits by denominator and take log):
-        log_prob = logits - torch.log(exp_logits_sum)     # shape: (n_views * N, n_views * N)
+        # compute log probabilities (everything inside inner sum) and mask out negative and same-sample pairs:
+        log_prob_all = (all_logits - torch.log(exp_denom_logits_sum))     # shape: (N_new, N_new)
+        log_prob = mask * log_prob_all     # shape: (N_new, N_new)
+        assert tuple(log_prob.size()) == (n_views * batch_size, n_views * batch_size), "log_prob has incorrect shape."
 
-        # compute mean of log probabilities over positive pairs (masking out negative pairs):
-        mean_log_prob_pos = (mask * log_prob).sum(dim=1)     # shape: (n_views * N, )
+
+        # -------------------------
+        # AVERAGE LOG PROBABILITIES
+        # -------------------------
+
+        # sum over non-anchor (z_p) dimension: (N_new, N_new) -> (N_new, )
+        mean_log_prob = log_prob.sum(dim=1)
         # divide by size of positive pair sets:
-        mean_log_prob_pos = mean_log_prob_pos / mask.sum(dim=1)     # shape: (n_views * N, )
+        mean_log_prob = mean_log_prob / mask.sum(dim=1)     # shape: (N_new, )
+        assert tuple(mean_log_prob.size()) == (n_views * batch_size, ), "mean_log_prob has incorrect shape."
 
         # flip sign:
-        loss = -1 * mean_log_prob_pos     # shape: (n_views * N, )
-        # sum over anchors (z_i dimension):
-        loss = loss.mean()
+        mean_log_prob = -1 * mean_log_prob
+        # compute mean over anchor (z_i) dimension:
+        loss = mean_log_prob.mean()
 
         return loss
 
