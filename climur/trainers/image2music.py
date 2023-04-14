@@ -12,11 +12,6 @@ from climur.losses.intramodal_supcon import IntraModalSupCon
 from climur.losses.crossmodal_supcon import CrossModalSupCon
 
 
-# TEMP:
-TESTING = False
-device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("cpu")
-
-
 class Image2Music(LightningModule):
     """LightningModule class for image-music supervised contrastive learning.
 
@@ -32,6 +27,7 @@ class Image2Music(LightningModule):
         audio2audio_supcon (nn.Module): Audio-to-audio SupCon loss criterion.
         image2audio_supcon (nn.Module): Image-to-audio SupCon loss criterion.
         audio2image_supcon (nn.Module): Audio-to-image SupCon loss criterion.
+        torch_device (PyTorch device): PyTorch device (only used for testing).
     """
 
     def __init__(
@@ -45,7 +41,8 @@ class Image2Music(LightningModule):
             normalize_image_embeds: bool = True,
             normalize_audio_embeds: bool = True,
             freeze_image_backbone: bool = False,
-            freeze_audio_backbone: bool = False
+            freeze_audio_backbone: bool = False,
+            device: Any = None
         ) -> None:
         """Initialization.
 
@@ -60,6 +57,7 @@ class Image2Music(LightningModule):
             normalize_audio_embeds (bool): Selects whether to normalize audio embeddings.
             freeze_image_backbone (bool): Selects whether to freeze image backbone model.
             freeze_audio_backbone (bool): Selects whether to freeze audio backbone model.
+            device (PyTorch device): PyTorch device.
         
         Returns: None
         """
@@ -72,6 +70,7 @@ class Image2Music(LightningModule):
         self.normalize_image_embeds = normalize_image_embeds
         self.normalize_audio_embeds = normalize_audio_embeds
         self.joint_embed_dim = joint_embed_dim
+        self.torch_device = device
 
         # save image backbone model and freeze if selected:
         self.image_backbone = image_backbone
@@ -95,11 +94,11 @@ class Image2Music(LightningModule):
             nn.Linear(in_features=projector_hidden_dim, out_features=joint_embed_dim, bias=True)
         )
 
-        # create loss functions:
-        self.image2image_supcon = IntraModalSupCon(temperature=self.hparams.loss_temperature)
-        self.audio2audio_supcon = IntraModalSupCon(temperature=self.hparams.loss_temperature)
-        self.image2audio_supcon = CrossModalSupCon(temperature=self.hparams.loss_temperature)
-        self.audio2image_supcon = CrossModalSupCon(temperature=self.hparams.loss_temperature)
+        # create loss functions:     # TODO: Change self.hparams.loss_temperature to hparams["loss_temperature"]
+        self.image2image_supcon = IntraModalSupCon(temperature=self.hparams.loss_temperature, device=device)
+        self.audio2audio_supcon = IntraModalSupCon(temperature=self.hparams.loss_temperature, device=device)
+        self.image2audio_supcon = CrossModalSupCon(temperature=self.hparams.loss_temperature, device=device)
+        self.audio2image_supcon = CrossModalSupCon(temperature=self.hparams.loss_temperature, device=device)
     
     def forward(self, images: Tensor, audios: Tensor) -> Tuple[Tensor, Tensor]:
         """Forward pass.
@@ -162,13 +161,12 @@ class Image2Music(LightningModule):
         image_labels = batch["image_label"]
         audios = batch["audio"]
         audio_labels = batch["audio_label"]
-
-        # TEMP:
-        if TESTING:
-            images = images.to(device)
-            image_labels = image_labels.to(device)
-            audios = audios.to(device)
-            audio_labels = audio_labels.to(device)
+        # send to device if required:
+        if self.torch_device is not None:
+            images = images.to(self.torch_device)
+            image_labels = image_labels.to(self.torch_device)
+            audios = audios.to(self.torch_device)
+            audio_labels = audio_labels.to(self.torch_device)
         
         # forward pass:
         image_embeds, audio_embeds = self.forward(images, audios)
@@ -213,13 +211,12 @@ class Image2Music(LightningModule):
         image_labels = batch["image_label"]
         audios = batch["audio"]
         audio_labels = batch["audio_label"]
-
-        # TEMP:
-        if TESTING:
-            images = images.to(device)
-            image_labels = image_labels.to(device)
-            audios = audios.to(device)
-            audio_labels = audio_labels.to(device)
+        # send to device if required:
+        if self.torch_device is not None:
+            images = images.to(self.torch_device)
+            image_labels = image_labels.to(self.torch_device)
+            audios = audios.to(self.torch_device)
+            audio_labels = audio_labels.to(self.torch_device)
         
         # forward pass:
         image_embeds, audio_embeds = self.forward(images, audios)

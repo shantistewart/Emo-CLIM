@@ -5,9 +5,7 @@ Reference: "Supervised Contrastive Learning", Khosla et al., 2020."""
 import torch
 import torch.nn as nn
 from torch import Tensor
-
-# TEMP:
-device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("cpu")
+from typing import Any
 
 
 class IntraModalSupCon(nn.Module):
@@ -15,13 +13,15 @@ class IntraModalSupCon(nn.Module):
 
     Attributes:
         temperature (float): Temperature hyperparameter.
+        torch_device (PyTorch device): PyTorch device.
     """
 
-    def __init__(self, temperature: float = 0.07) -> None:
+    def __init__(self, temperature: float = 0.07, device: Any = None) -> None:
         """Initialization.
 
         Args:
             temperature (float): Temperature hyperparameter.
+            device (PyTorch device): PyTorch device.
         
         Returns: None
         """
@@ -30,6 +30,7 @@ class IntraModalSupCon(nn.Module):
 
         # save parameters:
         self.temperature = temperature
+        self.torch_device = device
     
     def forward(self, embeds: Tensor, labels: Tensor) -> Tensor:
         """Forward pass.
@@ -60,13 +61,15 @@ class IntraModalSupCon(nn.Module):
 
         # create supervised mask for positive pairs (masks out negative pairs):
         sup_mask = torch.eq(labels, labels.T).float()     # shape: (N, N)
-        sup_mask = sup_mask.to(device)     # TODO: Try removing .to(device), since Lightning should take care of this.
+        if self.torch_device is not None:
+            sup_mask = sup_mask.to(self.torch_device)
         # tile (expand) mask to account for n_views: (N, N) -> (N_new, N_new)
         sup_mask = sup_mask.repeat(n_views, n_views)
 
         # create mask to mask out same-sample pairs:
         same_mask = 1 - torch.eye(sup_mask.size(dim=0))     # shape: (N_new, N_new)
-        same_mask = same_mask.to(device)     # TODO: Try removing .to(device), since Lightning should take care of this.
+        if self.torch_device is not None:
+            same_mask = same_mask.to(self.torch_device)
 
         # combine supervised and same-sample masks:
         mask = same_mask * sup_mask     # shape: (N_new, N_new)

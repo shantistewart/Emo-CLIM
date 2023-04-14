@@ -8,12 +8,12 @@ from climur.losses.crossmodal_supcon import CrossModalSupCon
 
 
 # script options:
-device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("cpu")
+device = torch.device("cuda:3") if torch.cuda.is_available() else torch.device("cpu")
 # for SupCon losses:
 temperature = 0.07
 n_classes = 3
 # input dimensions:
-batch_size = 16
+batch_size = 128
 n_views = 2
 embed_dim = 128
 
@@ -26,15 +26,15 @@ if __name__ == "__main__":
     print("Testing IntraModalSupCon class:")
 
     # create loss:
-    criterion = IntraModalSupCon(temperature=temperature)
-    criterion.to(device)
+    intra_supcon = IntraModalSupCon(temperature=temperature, device=device)
+    intra_supcon.to(device)
 
     # test forward pass:
     print("\nTesting forward pass...")
     embeds = torch.rand((batch_size, n_views, embed_dim)).to(device)
     labels = torch.randint(low=0, high=n_classes, size=(batch_size, )).to(device)
     print("Embeddings size: {}".format(tuple(embeds.size())))
-    loss = criterion(embeds, labels)
+    loss = intra_supcon(embeds, labels)
     assert type(loss) == Tensor, "Loss is of incorrect data type."
     assert len(tuple(loss.size())) == 0, "Loss has incorrect shape."
 
@@ -43,8 +43,8 @@ if __name__ == "__main__":
     print("\n\nTesting CrossModalSupCon class:")
 
     # create loss:
-    criterion = CrossModalSupCon(temperature=temperature)
-    criterion.to(device)
+    cross_supcon = CrossModalSupCon(temperature=temperature)
+    cross_supcon.to(device)
 
     # test forward pass:
     print("\nTesting forward pass...")
@@ -53,7 +53,7 @@ if __name__ == "__main__":
     embeds_M2 = torch.rand((batch_size, n_views, embed_dim)).to(device)
     labels_M2 = torch.randint(low=0, high=n_classes, size=(batch_size, )).to(device)
     print("Embeddings size: {}".format(tuple(embeds_M1.size())))
-    loss = criterion(embeds_M1, labels_M1, embeds_M2, labels_M2)
+    loss = cross_supcon(embeds_M1, labels_M1, embeds_M2, labels_M2)
     assert type(loss) == Tensor, "Loss is of incorrect data type."
     assert len(tuple(loss.size())) == 0, "Loss has incorrect shape."
 

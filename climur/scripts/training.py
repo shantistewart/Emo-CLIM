@@ -22,7 +22,6 @@ from climur.utils.misc import load_configs
 # default config file:
 CONFIG_FILE = "configs/config_train.yaml"
 # script options:
-device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("cpu")
 verbose = True
 
 
@@ -52,7 +51,10 @@ if __name__ == "__main__":
     training_configs = configs["training"]
     logging_configs = configs["logging"]
 
-    # set random seed if selected:
+    # get device:
+    gpu_id = training_configs["gpu"]
+    device = torch.device(f"cuda:{gpu_id}") if torch.cuda.is_available() else torch.device("cpu")
+    # set random seed if selected:     # TODO: Double-check that this does not mess up randomness of dataloaders.
     if dataset_configs["random_seed"]:
         pl.seed_everything(dataset_configs["random_seed"], workers=True)
     
@@ -105,6 +107,8 @@ if __name__ == "__main__":
     
     else:
         raise ValueError("{} model not supported".format(audio_backbone_configs["model_name"]))
+    
+    audio_backbone.to(device)
 
 
     # ------------
@@ -187,7 +191,8 @@ if __name__ == "__main__":
         normalize_image_embeds=full_model_configs["normalize_image_embeds"],
         normalize_audio_embeds=full_model_configs["normalize_audio_embeds"],
         freeze_image_backbone=full_model_configs["freeze_image_backbone"],
-        freeze_audio_backbone=full_model_configs["freeze_audio_backbone"]
+        freeze_audio_backbone=full_model_configs["freeze_audio_backbone"],
+        device=device
     )
 
     # create logger (logs are saved to /save_dir/name/version/):
@@ -210,7 +215,7 @@ if __name__ == "__main__":
         log_every_n_steps=logging_configs["log_every_n_steps"],
         # sync_batchnorm=True,     # TODO: Check if this is only required for multi-GPU training.
         accelerator="gpu",
-        devices = training_configs["gpus"]
+        devices = [training_configs["gpu"]]
         # deterministic="warn",     # set when running training sessions for reproducibility
     )
 

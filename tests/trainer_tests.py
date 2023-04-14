@@ -31,7 +31,7 @@ IMAGE_EMBED_DIM = 512
 SAMPLE_RATE = 16000
 
 # script options:
-device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("cpu")
+device = torch.device("cuda:3") if torch.cuda.is_available() else torch.device("cpu")
 # for audio backbone model:
 audio_backbone_name = "ShortChunk"     # or "HarmonicCNN"
 if audio_backbone_name == "ShortChunk":
@@ -65,7 +65,7 @@ verbose = True
 if __name__ == "__main__":
     print("\n")
 
-
+    
     # ---------------
     # BACKBONE MODELS
     # ---------------
@@ -110,6 +110,7 @@ if __name__ == "__main__":
     
     else:
         raise ValueError("{} model not supported".format(audio_backbone_name))
+    
     audio_backbone.to(device)
 
 
@@ -187,7 +188,8 @@ if __name__ == "__main__":
         normalize_image_embeds=normalize_image_embeds,
         normalize_audio_embeds=normalize_audio_embeds,
         freeze_image_backbone=True,
-        freeze_audio_backbone=True
+        freeze_audio_backbone=True,
+        device=device
     )
     full_model.to(device)
 
