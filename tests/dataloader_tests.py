@@ -18,6 +18,8 @@ example_idx = 9
 sample_rate = 16000
 clip_length_sec = 5.0
 clip_length_samples = int(clip_length_sec * sample_rate)
+# for multimodal dataset:
+effective_length = 10000
 
 
 if __name__ == "__main__":
@@ -68,15 +70,15 @@ if __name__ == "__main__":
     print("\n\n\nTesting Multimodal class...")
     multimodal_dataset = Multimodal(
         image_dataset=imac_dataset,
-        audio_dataset=audioset_dataset
+        audio_dataset=audioset_dataset,
+        length=effective_length
     )
 
     # test __len__() method:
     print("\nTesting __len__() method...")
-    assert len(multimodal_dataset) == min(multimodal_dataset.image_dataset_len, multimodal_dataset.audio_dataset_len), "Error with __len__() method."
-    print("Effective size of image dataset: {}".format(multimodal_dataset.image_dataset_len))
-    print("Effective size of audio dataset: {}".format(multimodal_dataset.audio_dataset_len))
-    print("Size of dataset: {}".format(len(multimodal_dataset)))
+    print("Length of dataset: {}".format(len(multimodal_dataset)))
+    print("Effective length of image dataset: {}".format(multimodal_dataset.image_dataset_len))
+    print("Effective length of audio dataset: {}".format(multimodal_dataset.audio_dataset_len))
 
     # test __getitem__() method:
     print("\nTesting __getitem__() method...")

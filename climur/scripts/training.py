@@ -147,15 +147,17 @@ if __name__ == "__main__":
     # create multimodal datasets:
     multimodal_train_dataset = Multimodal(
         image_dataset=image_train_dataset,
-        audio_dataset=audio_train_dataset
+        audio_dataset=audio_train_dataset,
+        length=dataset_configs["train_n_batches"] * training_configs["batch_size"]
     )
     multimodal_val_dataset = Multimodal(
         image_dataset=image_val_dataset,
-        audio_dataset=audio_val_dataset
+        audio_dataset=audio_val_dataset,
+        length=dataset_configs["val_n_batches"] * training_configs["batch_size"]
     )
     if verbose:
-        print("Using {} images and {} audio clips for training.".format(multimodal_train_dataset.image_dataset_len, multimodal_train_dataset.audio_dataset_len))
-        print("Using {} images and {} audio clips for validation.".format(multimodal_val_dataset.image_dataset_len, multimodal_val_dataset.audio_dataset_len))
+        print("For training: using {} batches per epoch, sampling from {} images and {} audio clips.".format(dataset_configs["train_n_batches"], multimodal_train_dataset.image_dataset_len, multimodal_train_dataset.audio_dataset_len))
+        print("For validation: using {} batches, sampling from {} images and {} audio clips.".format(dataset_configs["val_n_batches"], multimodal_val_dataset.image_dataset_len, multimodal_val_dataset.audio_dataset_len))
     
     # create dataloaders:
     train_loader = DataLoader(
@@ -165,6 +167,7 @@ if __name__ == "__main__":
         num_workers=training_configs["n_workers"],
         drop_last=True
     )
+    assert len(train_loader) == dataset_configs["train_n_batches"], "Length of train_loader is incorrect."
     val_loader = DataLoader(
         multimodal_val_dataset,
         batch_size=training_configs["batch_size"],
@@ -172,6 +175,7 @@ if __name__ == "__main__":
         num_workers=training_configs["n_workers"],
         drop_last=True
     )
+    assert len(val_loader) == dataset_configs["val_n_batches"], "Length of val_loader is incorrect."
 
 
     # -------------------

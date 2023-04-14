@@ -24,8 +24,9 @@ class Multimodal(Dataset):
     Attributes:
         image_dataset (PyTorch Dataset): Image dataset.
         audio_dataset (PyTorch Dataset): Audio dataset.
-        image_dataset_len (int): Effective size of image dataset (disregarding images with unused labels).
-        audio_dataset_len (int): Effective size of audio dataset (disregarding audio clips with unused labels).
+        length (int): Effective length of dataset (since __getitem__(idx) ignores idx, length can be arbitrarily set).
+        image_dataset_len (int): Effective length of image dataset (disregarding images with unused labels).
+        audio_dataset_len (int): Effective length of audio dataset (disregarding audio clips with unused labels).
         n_classes (int): Number of (common) emotion tag classes.
         image2audio_tag_map (dict): Dictionary mapping image dataset emotion tags to audio dataset emotion tags.
         image_tags (list): Image dataset emotion tags.
@@ -35,12 +36,13 @@ class Multimodal(Dataset):
         idx2label (Dict): Dictionary mapping class label indices to emotion labels:
     """
 
-    def __init__(self, image_dataset: Dataset, audio_dataset: Dataset, image2audio_tag_map: Dict = IMAGE2AUDIO_TAG_MAP, label2idx: Dict = None) -> None:
+    def __init__(self, image_dataset: Dataset, audio_dataset: Dataset, length: int = None, image2audio_tag_map: Dict = IMAGE2AUDIO_TAG_MAP, label2idx: Dict = None) -> None:
         """Initialization.
 
         Args:
             image_dataset (PyTorch Dataset): Image dataset.
             audio_dataset (PyTorch Dataset): Audio dataset.
+            length (int): Effective length of dataset.
             image2audio_tag_map (dict): Dictinoary mapping image dataset emotion tags to audio dataset emotion tags.
             label2idx (Dict): Dictionary mapping emotion labels to class label indices (if None, default is created):
         
@@ -53,9 +55,10 @@ class Multimodal(Dataset):
         if label2idx is not None:
             assert set(list(label2idx.keys())) == set(list(image2audio_tag_map.values())), "Error with keys of label2idx."
         
-        # save (original) datasets:
+        # save parameters:
         self.image_dataset = image_dataset
         self.audio_dataset = audio_dataset
+        self.length = length
 
         # save things related to emotion tags:
         self.image2audio_tag_map = image2audio_tag_map
@@ -95,11 +98,15 @@ class Multimodal(Dataset):
         Args: None
 
         Returns:
-            dataset_len (int): Minimum of effective sizes of image and audio dataset.
+            dataset_len (int): Effective length of dataset.
         """
 
-        dataset_len = min(self.image_dataset_len, self.audio_dataset_len)
-
+        if self.length is not None:
+            dataset_len = self.length
+        # if length not specified, use default value:
+        else:
+            dataset_len = min(self.image_dataset_len, self.audio_dataset_len)
+        
         return dataset_len
     
     def __getitem__(self, idx: int) -> Dict[str, Union[Tensor, int]]:

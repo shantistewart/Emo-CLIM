@@ -9,6 +9,8 @@ dataset:
   image_dataset_dir: "/proj/systewar/datasets/IMAC/image_dataset"
   audio_dataset_dir: "/proj/systewar/datasets/audioset_music_mood"
   image_dataset_val_fract: 0.1
+  train_n_batches: 100     # number of batches (per epoch) to use for training set
+  val_n_batches: 20        # number of batches to use for validation set
   sample_rate: 16000
   random_seed: 42
 

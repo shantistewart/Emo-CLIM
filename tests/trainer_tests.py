@@ -57,6 +57,7 @@ loss_weights = {
     "audio2image": 0.25
 }
 batch_size = 64
+n_batches = 100
 optimizer = "Adam"
 learn_rate = 0.001
 verbose = True
@@ -65,7 +66,7 @@ verbose = True
 if __name__ == "__main__":
     print("\n")
 
-    
+
     # ---------------
     # BACKBONE MODELS
     # ---------------
@@ -134,13 +135,15 @@ if __name__ == "__main__":
         clip_length_samples=audio_clip_length,
         sample_rate=SAMPLE_RATE
     )
+    effective_length = n_batches * batch_size
     # create multimodal dataset:
     multimodal_dataset = Multimodal(
         image_dataset=image_dataset,
-        audio_dataset=audio_dataset
+        audio_dataset=audio_dataset,
+        length = effective_length
     )
     if verbose:
-        print("Dataset size: {}".format(len(multimodal_dataset)))
+        print("Effective dataset length: {}".format(len(multimodal_dataset)))
     
     # create dataloader:
     dataloader = DataLoader(
@@ -149,6 +152,8 @@ if __name__ == "__main__":
         shuffle=True,
         drop_last=True
     )
+    assert len(dataloader) == n_batches, "Length of dataloader is incorrect."
+
     # test example batch:
     example_batch = next(iter(dataloader))
     assert type(example_batch) == dict, "Example batch is of incorrect data type.."
@@ -162,7 +167,7 @@ if __name__ == "__main__":
             assert tuple(value.size()) == (batch_size, audio_clip_length), "Error with shape of {}".format(key)
         else:
             raise RuntimeError("Unexpected key in example batch dictionary.")
-    
+
 
     # ----------
     # FULL MODEL
