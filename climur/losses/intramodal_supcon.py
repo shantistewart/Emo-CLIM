@@ -99,7 +99,7 @@ class IntraModalSupCon(nn.Module):
         exp_denom_logits_sum = exp_denom_logits.sum(dim=1, keepdim=True)
 
         # compute log probabilities (everything inside inner sum) and mask out negative and same-sample pairs:
-        log_prob_all = (all_logits - torch.log(exp_denom_logits_sum))     # shape: (N_new, N_new)
+        log_prob_all = all_logits - torch.log(exp_denom_logits_sum)     # shape: (N_new, N_new)
         log_prob = mask * log_prob_all     # shape: (N_new, N_new)
         assert tuple(log_prob.size()) == (n_views * batch_size, n_views * batch_size), "log_prob has incorrect shape."
 
