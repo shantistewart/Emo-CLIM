@@ -57,7 +57,7 @@ if __name__ == "__main__":
     # set random seed if selected:     # TODO: Double-check that this does not mess up randomness of dataloaders.
     if dataset_configs["random_seed"]:
         pl.seed_everything(dataset_configs["random_seed"], workers=True)
-    
+
 
     # ---------------
     # BACKBONE MODELS
@@ -78,10 +78,9 @@ if __name__ == "__main__":
         audio_clip_length = SHORTCHUNK_INPUT_LENGTH
         # load pretrained full Short-Chunk CNN ResNet model:
         full_audio_backbone = ShortChunkCNN_Res()
-        full_audio_backbone.load_state_dict(torch.load(audio_backbone_configs["pretrained_model_path"], map_location=device))
-        full_audio_backbone.to(device)
+        full_audio_backbone.load_state_dict(torch.load(audio_backbone_configs["pretrained_model_path"], map_location=torch.device("cpu")))
         # create wrapper model:
-        sample_audio_input = torch.rand((training_configs["batch_size"], audio_clip_length)).to(device)
+        sample_audio_input = torch.rand((2, audio_clip_length))
         audio_backbone = ShortChunkCNNEmbeddings(
             full_audio_backbone,
             sample_input=sample_audio_input,
@@ -94,10 +93,9 @@ if __name__ == "__main__":
         audio_clip_length = HARMONIC_CNN_INPUT_LENGTH
         # load pretrained full Harmonic CNN model:
         full_audio_backbone = HarmonicCNN()
-        full_audio_backbone.load_state_dict(torch.load(audio_backbone_configs["pretrained_model_path"], map_location=device))
-        full_audio_backbone.to(device)
+        full_audio_backbone.load_state_dict(torch.load(audio_backbone_configs["pretrained_model_path"], map_location=torch.device("cpu")))
         # create wrapper model:
-        sample_audio_input = torch.rand((training_configs["batch_size"], audio_clip_length)).to(device)
+        sample_audio_input = torch.rand((2, audio_clip_length))
         audio_backbone = HarmonicCNNEmbeddings(
             full_audio_backbone,
             sample_input=sample_audio_input,
@@ -107,7 +105,7 @@ if __name__ == "__main__":
     
     else:
         raise ValueError("{} model not supported".format(audio_backbone_configs["model_name"]))
-    
+
     audio_backbone.to(device)
 
 

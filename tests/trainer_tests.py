@@ -81,13 +81,11 @@ if __name__ == "__main__":
     image_backbone.to(device)
 
     # set up audio backbone model:
-    sample_audio_input = torch.rand((batch_size, audio_clip_length))
-    sample_audio_input = sample_audio_input.to(device)
+    sample_audio_input = torch.rand((2, audio_clip_length))
     if audio_backbone_name == "ShortChunk":
         # load pretrained full Short-Chunk CNN ResNet model:
         full_audio_backbone = ShortChunkCNN_Res()
-        full_audio_backbone.load_state_dict(torch.load(pretrained_audio_backbone_path, map_location=device))
-        full_audio_backbone.to(device)
+        full_audio_backbone.load_state_dict(torch.load(pretrained_audio_backbone_path, map_location=torch.device("cpu")))
         # create wrapper model:
         audio_backbone = ShortChunkCNNEmbeddings(
             full_audio_backbone,
@@ -99,8 +97,7 @@ if __name__ == "__main__":
     elif audio_backbone_name == "HarmonicCNN":
         # load pretrained full Harmonic CNN model:
         full_audio_backbone = HarmonicCNN()
-        full_audio_backbone.load_state_dict(torch.load(pretrained_audio_backbone_path, map_location=device))
-        full_audio_backbone.to(device)
+        full_audio_backbone.load_state_dict(torch.load(pretrained_audio_backbone_path, map_location=torch.device("cpu")))
         # create wrapper model:
         audio_backbone = HarmonicCNNEmbeddings(
             full_audio_backbone,
