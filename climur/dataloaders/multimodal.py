@@ -43,7 +43,7 @@ class Multimodal(Dataset):
             image_dataset (PyTorch Dataset): Image dataset.
             audio_dataset (PyTorch Dataset): Audio dataset.
             length (int): Effective length of dataset.
-            image2audio_tag_map (dict): Dictinoary mapping image dataset emotion tags to audio dataset emotion tags.
+            image2audio_tag_map (dict): Dictionary mapping image dataset emotion tags to audio dataset emotion tags.
             label2idx (Dict): Dictionary mapping emotion labels to class label indices (if None, default is created):
         
         Returns: None
