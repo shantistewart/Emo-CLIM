@@ -21,9 +21,9 @@ image_backbone:
   embed_dim: 512
 # audio backbone options:
 audio_backbone:
-  model_name: "ShortChunk"     # or "HarmonicCNN"
-  pretrained_model_path: "/proj/systewar/pretrained_models/music_tagging/msd/short_chunk_resnet/best_model.pth"     # or "/proj/systewar/pretrained_models/music_tagging/msd/harmonic_cnn/best_model.pth"
-  embed_dim: 512     # or 256
+  model_name: "HarmonicCNN"     # or "ShortChunk"
+  pretrained_model_path: "/proj/systewar/pretrained_models/music_tagging/msd/harmonic_cnn/best_model.pth"     # or "/proj/systewar/pretrained_models/music_tagging/msd/short_chunk_resnet/best_model.pth"
+  embed_dim: 256     # or 512
   last_layer_embed: "layer7"
   pool_type: "max"
 
@@ -33,18 +33,18 @@ full_model:
   normalize_image_embeds: true
   normalize_audio_embeds: true
   freeze_image_backbone: true
-  freeze_audio_backbone: true
+  freeze_audio_backbone: false
 
 # training options:
 training:
-  loss_temperature: 0.07
+  loss_temperature: 0.07     # TODO: Maybe try in range [0.1, 0.3]
   loss_weights:
     image2image: 0.25
     audio2audio: 0.25
     image2audio: 0.25
     audio2image: 0.25
-  batch_size: 128
-  max_epochs: 20
+  batch_size: 64
+  max_epochs: 30
   optimizer: "AdamW"
   learn_rate: 0.0001
   val_check_interval: 0.5     # how often to check validation set within a single training epoch
@@ -55,7 +55,7 @@ training:
 # note: logs are saved to log_dir/experiment_name/experiment_version/
 logging:
   log_dir: "/home/systewar/CLIMuR/train_logs"
-  experiment_name: "ShortChunk/all_losses"
+  experiment_name: "HarmonicCNN/unfrozen/all_losses"
   experiment_version: null     # automatic versioning if set to null (recommended)
   log_every_n_steps: 20     # how often to log
 ...
