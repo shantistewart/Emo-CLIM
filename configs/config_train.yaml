@@ -54,7 +54,7 @@ training:
 # logging options:
 # note: logs are saved to log_dir/experiment_name/experiment_version/
 logging:
-  log_dir: "/home/systewar/CLIMuR/train_logs"
+  log_dir: "/home/avramidi/CLIMuR/runs"
   experiment_name: "ShortChunk/all_losses"
   experiment_version: null     # automatic versioning if set to null (recommended)
   log_every_n_steps: 20     # how often to log
