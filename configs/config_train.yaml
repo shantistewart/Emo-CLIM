@@ -22,8 +22,8 @@ image_backbone:
 # audio backbone options:
 audio_backbone:
   model_name: "ShortChunk"     # or "HarmonicCNN"
-  pretrained_model_path: "/proj/systewar/pretrained_models/music_tagging/msd/short_chunk_resnet/best_model.pth"
-  embed_dim: 512
+  pretrained_model_path: "/proj/systewar/pretrained_models/music_tagging/msd/short_chunk_resnet/best_model.pth"     # or "/proj/systewar/pretrained_models/music_tagging/msd/harmonic_cnn/best_model.pth"
+  embed_dim: 512     # or 256
   last_layer_embed: "layer7"
   pool_type: "max"
 
@@ -45,11 +45,11 @@ training:
     audio2image: 0.25
   batch_size: 128
   max_epochs: 20
-  optimizer: "Adam"
+  optimizer: "AdamW"
   learn_rate: 0.0001
   val_check_interval: 0.5     # how often to check validation set within a single training epoch
   n_workers: 4
-  gpu: 3
+  gpu: 1
 
 # logging options:
 # note: logs are saved to log_dir/experiment_name/experiment_version/
