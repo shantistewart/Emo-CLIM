@@ -12,6 +12,7 @@
 # specific directories/files:
 pretrained_models/
 train_logs/
+train_logs_old/
 
 
 
