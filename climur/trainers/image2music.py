@@ -38,7 +38,7 @@ class Image2Music(LightningModule):
             image_embed_dim: int,
             audio_embed_dim: int,
             hparams: Dict,
-            projector_dropout_prob: int = 0.5,
+            projector_dropout_prob: float = 0.5,
             normalize_image_embeds: bool = True,
             normalize_audio_embeds: bool = True,
             freeze_image_backbone: bool = False,
@@ -54,7 +54,7 @@ class Image2Music(LightningModule):
             image_embed_dim (int): Dimension of image embeddings (outputs of image backbone model).
             audio_embed_dim (int): Dimension of audio embeddings (outputs of audio backbone model).
             hparams (dict): Dictionary of hyperparameters.
-            projector_dropout_prob (int): Dropout probability for projectors.
+            projector_dropout_prob (float): Dropout probability for projectors.
             normalize_image_embeds (bool): Selects whether to normalize image embeddings.
             normalize_audio_embeds (bool): Selects whether to normalize audio embeddings.
             freeze_image_backbone (bool): Selects whether to freeze image backbone model.
