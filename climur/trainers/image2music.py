@@ -38,6 +38,7 @@ class Image2Music(LightningModule):
             image_embed_dim: int,
             audio_embed_dim: int,
             hparams: Dict,
+            projector_dropout_prob: int = 0.5,
             normalize_image_embeds: bool = True,
             normalize_audio_embeds: bool = True,
             freeze_image_backbone: bool = False,
@@ -53,6 +54,7 @@ class Image2Music(LightningModule):
             image_embed_dim (int): Dimension of image embeddings (outputs of image backbone model).
             audio_embed_dim (int): Dimension of audio embeddings (outputs of audio backbone model).
             hparams (dict): Dictionary of hyperparameters.
+            projector_dropout_prob (int): Dropout probability for projectors.
             normalize_image_embeds (bool): Selects whether to normalize image embeddings.
             normalize_audio_embeds (bool): Selects whether to normalize audio embeddings.
             freeze_image_backbone (bool): Selects whether to freeze image backbone model.
@@ -82,15 +84,17 @@ class Image2Music(LightningModule):
             self.audio_backbone.requires_grad_(False)
 
         # create projectors:
-        projector_hidden_dim = max(image_embed_dim, audio_embed_dim)
+        projector_hidden_dim = min(image_embed_dim, audio_embed_dim)
         self.image_projector = nn.Sequential(
             nn.Linear(in_features=image_embed_dim, out_features=projector_hidden_dim, bias=True),     # TODO: Maybe also try bias=False.
             nn.ReLU(),
+            nn.Dropout(p=projector_dropout_prob),
             nn.Linear(in_features=projector_hidden_dim, out_features=joint_embed_dim, bias=True)
         )
         self.audio_projector = nn.Sequential(
             nn.Linear(in_features=audio_embed_dim, out_features=projector_hidden_dim, bias=True),     # TODO: Maybe also try bias=False.
             nn.ReLU(),
+            nn.Dropout(p=projector_dropout_prob),
             nn.Linear(in_features=projector_hidden_dim, out_features=joint_embed_dim, bias=True)
         )
 

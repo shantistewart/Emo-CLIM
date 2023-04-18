@@ -218,6 +218,7 @@ if __name__ == "__main__":
         image_embed_dim=image_backbone_configs["embed_dim"],
         audio_embed_dim=audio_backbone_configs["embed_dim"],
         hparams=training_configs,  # TODO: Maybe change to include all configs (need to modify Image2Music class).
+        projector_dropout_prob=full_model_configs["projector_dropout_prob"],
         normalize_image_embeds=full_model_configs["normalize_image_embeds"],
         normalize_audio_embeds=full_model_configs["normalize_audio_embeds"],
         freeze_image_backbone=full_model_configs["freeze_image_backbone"],

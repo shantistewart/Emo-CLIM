@@ -31,7 +31,7 @@ IMAGE_EMBED_DIM = 512
 SAMPLE_RATE = 16000
 
 # script options:
-device = torch.device("cuda:3") if torch.cuda.is_available() else torch.device("cpu")
+device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("cpu")
 # for audio backbone model:
 audio_backbone_name = "ShortChunk"     # or "HarmonicCNN"
 if audio_backbone_name == "ShortChunk":
@@ -46,6 +46,7 @@ last_layer_embed = "layer7"
 pool_type = "max"
 # for full model:
 joint_embed_dim = 128
+projector_dropout_prob = 0.5
 normalize_image_embeds = True
 normalize_audio_embeds = True
 # for training:
@@ -187,6 +188,7 @@ if __name__ == "__main__":
         image_embed_dim=IMAGE_EMBED_DIM,
         audio_embed_dim=audio_embed_dim,
         hparams=hparams,
+        projector_dropout_prob=projector_dropout_prob,
         normalize_image_embeds=normalize_image_embeds,
         normalize_audio_embeds=normalize_audio_embeds,
         freeze_image_backbone=True,
