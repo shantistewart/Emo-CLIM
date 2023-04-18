@@ -21,7 +21,7 @@ from climur.trainers.image2music import Image2Music
 IMAC_IMAGES_DATA_ROOT = "/proj/systewar/datasets/IMAC/image_dataset"
 IMAC_IMAGES_METADATA_FILE = "metadata_train.csv"
 AUDIOSET_DATA_ROOT = "/proj/systewar/datasets/audioset_music_mood"
-AUDIOSET_METADATA_FILE = "metadata_unbalanced_train.csv"
+AUDIOSET_METADATA_FILE = "new_split_metadata_files/metadata_train.csv"
 
 # image constants:
 IMAGE_CHANNELS = 3

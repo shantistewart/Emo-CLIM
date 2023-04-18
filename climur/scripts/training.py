@@ -42,6 +42,7 @@ if __name__ == "__main__":
     # set PyTorch warnings:
     # torch.set_warn_always(False)
 
+
     # -------
     # CONFIGS
     # -------
@@ -62,6 +63,7 @@ if __name__ == "__main__":
     # set random seed if selected:     # TODO: Double-check that this does not mess up randomness of dataloaders.
     if dataset_configs["random_seed"]:
         pl.seed_everything(dataset_configs["random_seed"], workers=True)
+
 
     # ---------------
     # BACKBONE MODELS
@@ -120,6 +122,7 @@ if __name__ == "__main__":
 
     audio_backbone.to(device)
 
+
     # ------------
     # DATA LOADERS
     # ------------
@@ -142,13 +145,13 @@ if __name__ == "__main__":
     # create audio datasets:
     audio_train_dataset = AudioSetMood(
         root=dataset_configs["audio_dataset_dir"],
-        metadata_file_name="metadata_unbalanced_train.csv",
+        metadata_file_name="new_split_metadata_files/metadata_train.csv",
         clip_length_samples=audio_clip_length,
         sample_rate=dataset_configs["sample_rate"],
     )
     audio_val_dataset = AudioSetMood(
         root=dataset_configs["audio_dataset_dir"],
-        metadata_file_name="metadata_balanced_train.csv",  # TODO: Reconsider AudioSet split.
+        metadata_file_name="new_split_metadata_files/metadata_val.csv",
         clip_length_samples=audio_clip_length,
         sample_rate=dataset_configs["sample_rate"],
     )
@@ -200,6 +203,7 @@ if __name__ == "__main__":
     )
     assert len(val_loader) == dataset_configs["val_n_batches"], "Length of val_loader is incorrect."
 
+
     # -------------------
     # FULL MODEL & LOGGER
     # -------------------
@@ -228,17 +232,17 @@ if __name__ == "__main__":
         version=logging_configs["experiment_version"],
     )
 
+
     # --------
     # TRAINING
     # --------
 
-    model_ckpt_callback = ModelCheckpoint(monitor="Valid/total_loss", mode="min", save_top_k=1)
-
     # create trainer:
+    model_ckpt_callback = ModelCheckpoint(monitor="validation/total_loss", mode="min", save_top_k=1)
     trainer = Trainer(
         logger=logger,
-        callbacks=[model_ckpt_callback],
         max_epochs=training_configs["max_epochs"],
+        callbacks=[model_ckpt_callback],
         val_check_interval=training_configs["val_check_interval"],
         log_every_n_steps=logging_configs["log_every_n_steps"],
         # sync_batchnorm=True,     # TODO: Check if this is only required for multi-GPU training.
@@ -250,4 +254,6 @@ if __name__ == "__main__":
     # train model:
     trainer.fit(full_model, train_dataloaders=train_loader, val_dataloaders=val_loader)
 
+
     print("\n\n")
+
