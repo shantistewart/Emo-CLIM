@@ -8,7 +8,6 @@
 dataset:
   image_dataset_dir: "/proj/systewar/datasets/IMAC/image_dataset"
   audio_dataset_dir: "/proj/systewar/datasets/audioset_music_mood"
-  image_dataset_val_fract: 0.1
   train_n_batches: 100     # number of batches (per epoch) to use for training set
   val_n_batches: 100        # number of batches to use for validation set
   sample_rate: 16000
@@ -34,7 +33,7 @@ full_model:
   normalize_image_embeds: true
   normalize_audio_embeds: true
   freeze_image_backbone: true
-  freeze_audio_backbone: false
+  freeze_audio_backbone: true
 
 # training options:
 training:
@@ -56,7 +55,7 @@ training:
 # note: logs are saved to log_dir/experiment_name/experiment_version/
 logging:
   log_dir: "/home/systewar/CLIMuR/train_logs"
-  experiment_name: "HarmonicCNN/unfrozen/all_losses"
+  experiment_name: "HarmonicCNN/frozen/all_losses"
   experiment_version: null     # automatic versioning if set to null (recommended)
   log_every_n_steps: 20     # how often to log
 ...
