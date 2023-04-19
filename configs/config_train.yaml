@@ -45,10 +45,10 @@ training:
     image2audio: 0.25
     audio2image: 0.25
   batch_size: 64
-  max_epochs: 30
+  max_epochs: 15
   optimizer: "AdamW"
   learn_rate: 0.0001
-  val_check_interval: 0.5     # how often to check validation set within a single training epoch
+  val_check_interval: 1.0     # how often to check validation set within a single training epoch
   n_workers: 4
   gpu: 1
 
