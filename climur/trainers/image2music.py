@@ -87,12 +87,14 @@ class Image2Music(LightningModule):
         projector_hidden_dim = min(image_embed_dim, audio_embed_dim)
         self.image_projector = nn.Sequential(
             nn.Linear(in_features=image_embed_dim, out_features=projector_hidden_dim, bias=True),     # TODO: Maybe also try bias=False.
+            nn.BatchNorm1d(projector_hidden_dim),
             nn.ReLU(),
             nn.Dropout(p=projector_dropout_prob),
             nn.Linear(in_features=projector_hidden_dim, out_features=joint_embed_dim, bias=True)
         )
         self.audio_projector = nn.Sequential(
             nn.Linear(in_features=audio_embed_dim, out_features=projector_hidden_dim, bias=True),     # TODO: Maybe also try bias=False.
+            nn.BatchNorm1d(projector_hidden_dim),
             nn.ReLU(),
             nn.Dropout(p=projector_dropout_prob),
             nn.Linear(in_features=projector_hidden_dim, out_features=joint_embed_dim, bias=True)
