@@ -210,15 +210,21 @@ if __name__ == "__main__":
 
     if verbose:
         print("\nSetting up full model and logger...")
-
+    
     full_model = Image2Music(
         image_backbone=image_backbone,
         audio_backbone=audio_backbone,
-        joint_embed_dim=full_model_configs["joint_embed_dim"],
+        output_embed_dim=full_model_configs["output_embed_dim"],
         image_embed_dim=image_backbone_configs["embed_dim"],
         audio_embed_dim=audio_backbone_configs["embed_dim"],
         hparams=training_configs,  # TODO: Maybe change to include all configs (need to modify Image2Music class).
-        projector_dropout_prob=full_model_configs["projector_dropout_prob"],
+
+        multi_task = full_model_configs["multi_task"],
+        base_proj_hidden_dim = full_model_configs["base_proj_hidden_dim"],
+        base_proj_dropout = full_model_configs["base_proj_dropout"],
+        base_proj_output_dim = full_model_configs["base_proj_output_dim"],
+        task_proj_dropout = full_model_configs["task_proj_dropout"],
+        
         normalize_image_embeds=full_model_configs["normalize_image_embeds"],
         normalize_audio_embeds=full_model_configs["normalize_audio_embeds"],
         freeze_image_backbone=full_model_configs["freeze_image_backbone"],

@@ -33,7 +33,7 @@ SAMPLE_RATE = 16000
 # script options:
 device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("cpu")
 # for audio backbone model:
-audio_backbone_name = "ShortChunk"     # or "HarmonicCNN"
+audio_backbone_name = "HarmonicCNN"     # or "ShortChunk"
 if audio_backbone_name == "ShortChunk":
     audio_clip_length = SHORTCHUNK_INPUT_LENGTH     # ~3.69 seconds
     audio_embed_dim = 512
@@ -44,11 +44,17 @@ elif audio_backbone_name == "HarmonicCNN":
     pretrained_audio_backbone_path = "/proj/systewar/pretrained_models/music_tagging/msd/harmonic_cnn/best_model.pth"
 last_layer_embed = "layer7"
 pool_type = "max"
+
 # for full model:
-joint_embed_dim = 128
-projector_dropout_prob = 0.5
+output_embed_dim = 128
+multi_task = True
+base_proj_hidden_dim = 256
+base_proj_dropout = 0.2
+base_proj_output_dim = 128
+task_proj_dropout = 0.5
 normalize_image_embeds = True
 normalize_audio_embeds = True
+
 # for training:
 loss_temperature = 0.07
 loss_weights = {
@@ -184,11 +190,17 @@ if __name__ == "__main__":
     full_model = Image2Music(
         image_backbone=image_backbone,
         audio_backbone=audio_backbone,
-        joint_embed_dim=joint_embed_dim,
+        output_embed_dim=output_embed_dim,
         image_embed_dim=IMAGE_EMBED_DIM,
         audio_embed_dim=audio_embed_dim,
         hparams=hparams,
-        projector_dropout_prob=projector_dropout_prob,
+
+        multi_task = multi_task,
+        base_proj_hidden_dim = base_proj_hidden_dim,
+        base_proj_dropout = base_proj_dropout,
+        base_proj_output_dim = base_proj_output_dim,
+        task_proj_dropout = task_proj_dropout,
+
         normalize_image_embeds=normalize_image_embeds,
         normalize_audio_embeds=normalize_audio_embeds,
         freeze_image_backbone=True,
@@ -214,12 +226,27 @@ if __name__ == "__main__":
         print("Input audio clips size: {}".format(tuple(audios.size())))
     
     # test forward pass:
-    image_embeds, audio_embeds = full_model.forward(images, audios)
-    if verbose:
-        print("Image embeddings size: {}".format(tuple(image_embeds.size())))
-        print("Audio embeddings size: {}".format(tuple(audio_embeds.size())))
-    assert tuple(image_embeds.size()) == (batch_size, joint_embed_dim), "Error with shape of image embeddings."
-    assert tuple(audio_embeds.size()) == (batch_size, joint_embed_dim), "Error with shape of image embeddings."
+    if multi_task:
+        image_intra_embeds, image_cross_embeds, audio_intra_embeds, audio_cross_embeds = full_model.forward(images, audios)
+        if verbose:
+            print()
+            print("image_intra_embeds size: {}".format(tuple(image_intra_embeds.size())))
+            print("image_cross_embds size: {}".format(tuple(image_cross_embeds.size())))
+            print("audio_intra_embeds size: {}".format(tuple(audio_intra_embeds.size())))
+            print("audio_cross_embds size: {}".format(tuple(audio_cross_embeds.size())))
+        assert tuple(image_intra_embeds.size()) == (batch_size, output_embed_dim), "Error with shape of image_intra_embeds."
+        assert tuple(image_cross_embeds.size()) == (batch_size, output_embed_dim), "Error with shape of image_cross_embeds."
+        assert tuple(audio_intra_embeds.size()) == (batch_size, output_embed_dim), "Error with shape of audio_intra_embeds."
+        assert tuple(audio_cross_embeds.size()) == (batch_size, output_embed_dim), "Error with shape of audio_cross_embeds."
+    
+    else:
+        image_embeds, audio_embeds = full_model.forward(images, audios)
+        if verbose:
+            print()
+            print("Image embeddings size: {}".format(tuple(image_embeds.size())))
+            print("Audio embeddings size: {}".format(tuple(audio_embeds.size())))
+        assert tuple(image_embeds.size()) == (batch_size, output_embed_dim), "Error with shape of image embeddings."
+        assert tuple(audio_embeds.size()) == (batch_size, output_embed_dim), "Error with shape of audio embeddings."
 
     # test training_step() method:
     if verbose:
