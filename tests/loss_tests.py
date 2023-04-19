@@ -8,13 +8,13 @@ from climur.losses.crossmodal_supcon import CrossModalSupCon
 
 
 # script options:
-device = torch.device("cuda:3") if torch.cuda.is_available() else torch.device("cpu")
+device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("cpu")
 # for SupCon losses:
 temperature = 0.07
 n_classes = 3
 # input dimensions:
-batch_size = 128
-n_views = 2
+batch_size = 64
+n_views = 1
 embed_dim = 128
 
 
@@ -37,10 +37,22 @@ if __name__ == "__main__":
     loss = intra_supcon(embeds, labels)
     assert type(loss) == Tensor, "Loss is of incorrect data type."
     assert len(tuple(loss.size())) == 0, "Loss has incorrect shape."
+    assert not torch.isnan(loss).item(), "Loss is NaN."
+
+    # test forward pass with an empty positive index set:
+    print("\n\nTesting forward pass with an empty positive index set...")
+    embeds = torch.rand((batch_size, n_views, embed_dim)).to(device)
+    labels = torch.zeros(batch_size).to(device)
+    labels[0] = 1.0
+    print("Embeddings size: {}".format(tuple(embeds.size())))
+    loss = intra_supcon(embeds, labels)
+    assert type(loss) == Tensor, "Loss is of incorrect data type."
+    assert len(tuple(loss.size())) == 0, "Loss has incorrect shape."
+    assert not torch.isnan(loss).item(), "Loss is NaN."
 
 
     # test CrossModalSupCon class:
-    print("\n\nTesting CrossModalSupCon class:")
+    print("\n\n\nTesting CrossModalSupCon class:")
 
     # create loss:
     cross_supcon = CrossModalSupCon(temperature=temperature)
@@ -56,6 +68,37 @@ if __name__ == "__main__":
     loss = cross_supcon(embeds_M1, labels_M1, embeds_M2, labels_M2)
     assert type(loss) == Tensor, "Loss is of incorrect data type."
     assert len(tuple(loss.size())) == 0, "Loss has incorrect shape."
+    assert not torch.isnan(loss).item(), "Loss is NaN."
+
+    # test forward pass with an empty positive index set:
+    print("\n\nTesting forward pass with an empty positive index set...")
+    embeds_M1 = torch.rand((batch_size, n_views, embed_dim)).to(device)
+    labels_M1 = torch.zeros(batch_size).to(device)
+    labels_M1[0] = 1.0
+    embeds_M2 = torch.rand((batch_size, n_views, embed_dim)).to(device)
+    labels_M2 = torch.zeros(batch_size).to(device)
+    labels_M2[0] = 2.0
+    print("Embeddings size: {}".format(tuple(embeds_M1.size())))
+    loss = cross_supcon(embeds_M1, labels_M1, embeds_M2, labels_M2)
+    assert type(loss) == Tensor, "Loss is of incorrect data type."
+    assert len(tuple(loss.size())) == 0, "Loss has incorrect shape."
+    assert not torch.isnan(loss).item(), "Loss is NaN."
+    assert loss.item() != 0.0, "Loss is 0."
+
+    """
+    # test forward pass with all empty positive index sets:
+    print("\n\nTesting forward pass with all empty positive index sets...")
+    embeds_M1 = torch.rand((batch_size, n_views, embed_dim)).to(device)
+    labels_M1 = torch.zeros(batch_size).to(device)
+    embeds_M2 = torch.rand((batch_size, n_views, embed_dim)).to(device)
+    labels_M2 = torch.ones(batch_size).to(device)
+    print("Embeddings size: {}".format(tuple(embeds_M1.size())))
+    loss = cross_supcon(embeds_M1, labels_M1, embeds_M2, labels_M2)
+    assert type(loss) == Tensor, "Loss is of incorrect data type."
+    assert len(tuple(loss.size())) == 0, "Loss has incorrect shape."
+    assert not torch.isnan(loss).item(), "Loss is NaN."
+    assert loss.item() == 0.0, "Loss is not 0."
+    """
 
 
     print("\n")

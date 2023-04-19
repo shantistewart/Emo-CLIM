@@ -5,6 +5,7 @@ Reference: "Supervised Contrastive Learning", Khosla et al., 2020."""
 import torch
 import torch.nn as nn
 from torch import Tensor
+import warnings
 from typing import Any
 
 
@@ -102,6 +103,8 @@ class CrossModalSupCon(nn.Module):
         # compute log probabilities (everything inside inner sum) and mask out negative pairs:
         log_prob_all = all_logits - torch.log(exp_denom_logits_sum)     # shape: (N_new, N_new)
         log_prob = mask * log_prob_all     # shape: (N_new, N_new)
+        if not torch.all(torch.isfinite(log_prob)):     # TODO: Maybe clip very large values using a threshold.
+            raise RuntimeError("log_prob contains NaN or +/- infinity values.")
         assert tuple(log_prob.size()) == (n_views * batch_size, n_views * batch_size), "log_prob has incorrect shape."
 
 
@@ -111,14 +114,24 @@ class CrossModalSupCon(nn.Module):
 
         # sum over M2 (z_p) dimension: (N_new, N_new) -> (N_new, )
         mean_log_prob = log_prob.sum(dim=1)
+        # compute sizes of positive pair sets:
+        pos_pair_set_sizes = mask.sum(dim=1)     # shape: (N_new, )
+        # replace 0s with 1s to avoid zero division issue:
+        if torch.any(pos_pair_set_sizes == 0.0).item():
+            warnings.warn("pos_pair_set_sizes contains zeros, replacing with ones.", RuntimeWarning)
+            pos_pair_set_sizes[pos_pair_set_sizes == 0.0] = 1.0
         # divide by size of positive pair sets:
-        mean_log_prob = mean_log_prob / mask.sum(dim=1)     # shape: (N_new, )
+        mean_log_prob = mean_log_prob / pos_pair_set_sizes     # shape: (N_new, )
+        if not torch.all(torch.isfinite(mean_log_prob)):
+            raise RuntimeError("mean_log_prob contains NaN or +/- infinity values, replacing with zeros.")
         assert tuple(mean_log_prob.size()) == (n_views * batch_size, ), "mean_log_prob has incorrect shape."
 
         # flip sign:
         mean_log_prob = -1 * mean_log_prob
         # compute mean over M1 (z_i) dimension:
         loss = mean_log_prob.mean()
+        if torch.isnan(loss).item():
+            raise RuntimeError("loss is NaN.")
 
         return loss
 
