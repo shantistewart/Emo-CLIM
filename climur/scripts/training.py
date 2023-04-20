@@ -9,6 +9,8 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 import torch
 from torch.utils.data import DataLoader
 import clip
+import librosa
+import laion_clap
 
 from climur.dataloaders.imac_images import IMACImages
 from climur.dataloaders.audioset import AudioSetMood
@@ -18,8 +20,10 @@ from climur.models.audio_model_components import ShortChunkCNN_Res, HarmonicCNN
 from climur.models.audio_backbones import (
     ShortChunkCNNEmbeddings,
     HarmonicCNNEmbeddings,
+    CLAPEmbeddings,
     SHORTCHUNK_INPUT_LENGTH,
     HARMONIC_CNN_INPUT_LENGTH,
+    CLAP_INPUT_LENGTH,
 )
 from climur.trainers.image2music import Image2Music
 from climur.utils.misc import load_configs
@@ -117,6 +121,36 @@ if __name__ == "__main__":
             pool_type=audio_backbone_configs["pool_type"],
         )
 
+    elif audio_backbone_configs["model_name"] == "CLAP":
+        # set audio input length:
+        audio_clip_length = CLAP_INPUT_LENGTH
+        # load pretrained full CLAP model:
+        full_audio_backbone = laion_clap.CLAP_Module(
+            enable_fusion=False, amodel='HTSAT-base'
+        )
+        """
+        full_audio_backbone = laion_clap.CLAP_Module(
+            enable_fusion=False
+        )
+        """
+        
+        full_audio_backbone.load_ckpt(
+           audio_backbone_configs["pretrained_model_path"]
+        )
+        # full_audio_backbone.load_ckpt()
+
+        # full_audio_backbone = laion_clap.CLAP_Module(enable_fusion=False, amodel='HTSAT-base')
+        # full_audio_backbone.load_ckpt("/media/data/projects/speech-privacy/music/pretrained_models/music_speech_epoch_15_esc_89.25.pt")
+        
+        # create wrapper model:
+        sample_audio_input = torch.rand((2, audio_clip_length))
+        audio_backbone = CLAPEmbeddings(
+            full_audio_backbone,
+            sample_input=sample_audio_input,
+            last_layer=audio_backbone_configs["last_layer_embed"],
+            pool_type=audio_backbone_configs["pool_type"],
+        )
+
     else:
         raise ValueError("{} model not supported".format(audio_backbone_configs["model_name"]))
 
@@ -148,12 +182,14 @@ if __name__ == "__main__":
         metadata_file_name="new_split_metadata_files/metadata_train.csv",
         clip_length_samples=audio_clip_length,
         sample_rate=dataset_configs["sample_rate"],
+        audio_model=audio_backbone_configs["model_name"]
     )
     audio_val_dataset = AudioSetMood(
         root=dataset_configs["audio_dataset_dir"],
         metadata_file_name="new_split_metadata_files/metadata_val.csv",
         clip_length_samples=audio_clip_length,
         sample_rate=dataset_configs["sample_rate"],
+        audio_model=audio_backbone_configs["model_name"]
     )
 
     # create multimodal datasets:
