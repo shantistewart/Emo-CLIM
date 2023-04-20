@@ -384,6 +384,104 @@ class Image2Music(LightningModule):
 
         return total_loss
     
+    def compute_image_embeds(self, images: Tensor) -> Union[ Tuple[Tensor, Tensor], Tensor ]:
+        """Computes image embeddings.
+
+        Args:
+            images (Tensor): Preprocessed images.
+                shape: (batch_size, image_channels, image_height, image_width)
+        
+        Returns:
+            if multi_task == True:
+                image_intra_embeds (Tensor): Image embeddings in intra-modal image embedding space.
+                    shape: (batch_size, output_embed_dim)
+                image_cross_embeds (Tensor): Image embeddings in (cross-modal) joint embedding space.
+                    shape: (batch_size, output_embed_dim)
+            else:
+                image_embeds (Tensor): Image embeddings (in joint embedding space).
+                    shape: (batch_size, output_embed_dim)
+        """
+
+        # encode images with backbone model:
+        images_enc = self.image_backbone(images)
+        # convert to float32 datatype (if not already):
+        images_enc = images_enc.float()     # TODO: Double-check that this is ok for CLIP outputs.
+        # L2-normalize embeddings if selected:
+        if self.normalize_image_embeds:
+            images_enc = F.normalize(images_enc, p=2, dim=-1)
+        
+        if self.multi_task:
+            # project to intermediate embedding space, using base projector:
+            image_intermediate_embeds = self.image_base_projector(images_enc)
+
+            # project to task-specific embedding spaces, using task-specific projectors:
+            image_intra_embeds = self.image_intra_projector(image_intermediate_embeds)
+            image_cross_embeds = self.image_cross_projector(image_intermediate_embeds)
+
+            # L2-normalize embeddings:
+            image_intra_embeds = F.normalize(image_intra_embeds, p=2, dim=-1)
+            image_cross_embeds = F.normalize(image_cross_embeds, p=2, dim=-1)
+
+            return image_intra_embeds, image_cross_embeds
+        
+        else:
+            # project to joint multimodal embedding space:
+            image_embeds = self.image_projector(images_enc)
+
+            # L2-normalize embeddings:
+            image_embeds = F.normalize(image_embeds, p=2, dim=-1)
+
+            return image_embeds
+    
+    def compute_audio_embeds(self, audios: Tensor) -> Union[ Tuple[Tensor, Tensor], Tensor ]:
+        """Computes audio embeddings.
+
+        Args:
+            audios (Tensor): Raw audio clips.
+                shape: (batch_size, audio_clip_length)
+        
+        Returns:
+            if multi_task == True:
+                audio_intra_embeds (Tensor): Audio embeddings in intra-modal audio embedding space.
+                    shape: (batch_size, output_embed_dim)
+                audio_cross_embeds (Tensor): Audio embeddings in (cross-modal) joint embedding space.
+                    shape: (batch_size, output_embed_dim)
+            else:
+                audio_embeds (Tensor): Audio embeddings (in joint embedding space).
+                    shape: (batch_size, output_embed_dim)
+        """
+
+        # encode audio clips with backbone model:
+        audios_enc = self.audio_backbone(audios)
+        # convert to float32 datatype (if not already):
+        audios_enc = audios_enc.float()
+        # L2-normalize embeddings if selected:
+        if self.normalize_audio_embeds:
+            audios_enc = F.normalize(audios_enc, p=2, dim=-1)
+        
+        if self.multi_task:
+            # project to intermediate embedding space, using base projector:
+            audio_intermediate_embeds = self.audio_base_projector(audios_enc)
+
+            # project to task-specific embedding spaces, using task-specific projectors:
+            audio_intra_embeds = self.audio_intra_projector(audio_intermediate_embeds)
+            audio_cross_embeds = self.audio_cross_projector(audio_intermediate_embeds)
+            
+            # L2-normalize embeddings:
+            audio_intra_embeds = F.normalize(audio_intra_embeds, p=2, dim=-1)
+            audio_cross_embeds = F.normalize(audio_cross_embeds, p=2, dim=-1)
+
+            return audio_intra_embeds, audio_cross_embeds
+        
+        else:
+            # project to joint multimodal embedding space:
+            audio_embeds = self.audio_projector(audios_enc)
+
+            # L2-normalize embeddings:
+            audio_embeds = F.normalize(audio_embeds, p=2, dim=-1)
+            
+            return audio_embeds
+    
     def configure_optimizers(self) -> Any:     # TODO: Maybe add a learning rate scheduler.
         """Configures optimizer.
 

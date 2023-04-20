@@ -270,5 +270,43 @@ if __name__ == "__main__":
     optimizer = full_model.configure_optimizers()
 
 
+    # test compute_image_embeds() method:
+    if verbose:
+        print()
+        print("\n\nTesting compute_image_embeds() method...")
+    if multi_task:
+        image_intra_embeds, image_cross_embeds = full_model.compute_image_embeds(images)
+        if verbose:
+            print()
+            print("image_intra_embeds size: {}".format(tuple(image_intra_embeds.size())))
+            print("image_cross_embds size: {}".format(tuple(image_cross_embeds.size())))
+        assert tuple(image_intra_embeds.size()) == (batch_size, output_embed_dim), "Error with shape of image_intra_embeds."
+        assert tuple(image_cross_embeds.size()) == (batch_size, output_embed_dim), "Error with shape of image_cross_embeds."
+    else:
+        image_embeds = full_model.compute_image_embeds(images)
+        if verbose:
+            print()
+            print("Image embeddings size: {}".format(tuple(image_embeds.size())))
+        assert tuple(image_embeds.size()) == (batch_size, output_embed_dim), "Error with shape of image embeddings."
+    
+    # test compute_audio_embeds() method:
+    if verbose:
+        print("\n\nTesting compute_audio_embeds() method...")
+    if multi_task:
+        audio_intra_embeds, audio_cross_embeds = full_model.compute_audio_embeds(audios)
+        if verbose:
+            print()
+            print("audio_intra_embeds size: {}".format(tuple(audio_intra_embeds.size())))
+            print("audio_cross_embds size: {}".format(tuple(audio_cross_embeds.size())))
+        assert tuple(audio_intra_embeds.size()) == (batch_size, output_embed_dim), "Error with shape of audio_intra_embeds."
+        assert tuple(audio_cross_embeds.size()) == (batch_size, output_embed_dim), "Error with shape of audio_cross_embeds."
+    else:
+        audio_embeds = full_model.compute_audio_embeds(audios)
+        if verbose:
+            print()
+            print("Image embeddings size: {}".format(tuple(audio_embeds.size())))
+        assert tuple(audio_embeds.size()) == (batch_size, output_embed_dim), "Error with shape of audio embeddings."
+
+
     print("\n")
 
