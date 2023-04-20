@@ -1,0 +1,43 @@
+
+
+# Configs for cross-modal retrieval evaluation.
+
+
+---
+# dataset options:
+dataset:
+  subset: "val"     # or "test"
+  image_dataset_dir: "/proj/systewar/datasets/IMAC/image_dataset"
+  audio_dataset_dir: "/proj/systewar/datasets/audioset_music_mood"
+  sample_rate: 16000
+
+# image backbone options:
+image_backbone:
+  embed_dim: 512
+# audio backbone options:
+audio_backbone:
+  model_name: "HarmonicCNN"     # or "ShortChunk"
+  embed_dim: 256     # or 512
+  last_layer_embed: "layer7"
+  pool_type: "max"
+
+# full model options:
+full_model:
+  checkpoint_path: "/home/systewar/CLIMuR/train_logs/multi_task/HarmonicCNN/frozen/all_losses/version_0/checkpoints/epoch=15-step=1600.ckpt"
+  output_embed_dim: 128
+  multi_task: true
+  base_proj_hidden_dim: 256
+  base_proj_dropout: 0.2     # TODO: Probably can remove this.
+  base_proj_output_dim: 128
+  task_proj_dropout: 0.5     # TODO: Probably can remove this.
+  normalize_image_embeds: true
+  normalize_audio_embeds: true
+  freeze_image_backbone: true     # TODO: Probably can remove this.
+  freeze_audio_backbone: true     # TODO: Probably can remove this.
+
+# evaluation options:
+eval:
+  # n_workers: 4
+  gpu: 1
+...
+
