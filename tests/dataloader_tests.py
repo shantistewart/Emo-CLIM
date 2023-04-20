@@ -18,6 +18,7 @@ example_idx = 9
 sample_rate = 16000
 clip_length_sec = 5.0
 clip_length_samples = int(clip_length_sec * sample_rate)
+overlap_ratio = 0.75     # only used for evaluation mode
 # for multimodal dataset:
 effective_length = 10000
 
@@ -53,7 +54,8 @@ if __name__ == "__main__":
         root=AUDIOSET_DATA_ROOT,
         metadata_file_name=AUDIOSET_METADATA_FILE,
         clip_length_samples=clip_length_samples,
-        sample_rate=sample_rate
+        sample_rate=sample_rate,
+        eval=False
     )
 
     # test __len__() method:
@@ -94,6 +96,29 @@ if __name__ == "__main__":
     print("image emotion label: {}".format(multimodal_dataset.idx2label[item["image_label"]]))
     print("audio shape: {}".format(tuple(item["audio"].size())))
     print("audio emotion label: {}".format(multimodal_dataset.idx2label[item["audio_label"]]))
+
+
+    # AudioSetMood CLASS EVALUATION MODE TESTS:
+    print("\n\n\nTesting AudioSetMood class in evaluation mode...")
+
+    # create dataset:
+    audioset_dataset = AudioSetMood(
+        root=AUDIOSET_DATA_ROOT,
+        metadata_file_name=AUDIOSET_METADATA_FILE,
+        clip_length_samples=clip_length_samples,
+        sample_rate=sample_rate,
+        eval=True,
+        overlap_ratio=overlap_ratio
+    )
+
+    # test __len__() method:
+    print("Testing __len__() method...")
+    assert len(audioset_dataset) == audioset_dataset.metadata.shape[0], "Error with __len__() method."
+
+    # test __getitem__() method:
+    print("Testing __getitem__() method...")
+    audio_chunks, tag = audioset_dataset[example_idx]
+    assert len(tuple(audio_chunks.size())) == 2 and audio_chunks.size(dim=-1) == clip_length_samples, "Error with audio shape."
 
 
     print("\n")
