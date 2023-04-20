@@ -1,0 +1,3 @@
+[submodule "climur/models/CLAP"]
+	path = climur/models/CLAP
+	url = https://github.com/LAION-AI/CLAP.git
