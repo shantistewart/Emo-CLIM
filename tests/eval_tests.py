@@ -3,9 +3,11 @@
 
 import argparse
 import torch
+import numpy as np
 import clip
 
 from climur.utils.eval import get_image_embeddings, get_audio_embeddings
+from climur.utils.retrieval import compute_retrieval_metrics
 from climur.dataloaders.imac_images import IMACImages
 from climur.dataloaders.audioset import AudioSetMood
 from climur.models.image_backbones import CLIPModel
@@ -109,12 +111,12 @@ if __name__ == "__main__":
     audio_backbone.to(device)
 
 
-    # ------------
-    # DATA LOADERS
-    # ------------
+    # --------
+    # DATASETS
+    # --------
 
     if verbose:
-        print("\nSetting up datasets and data loaders...")
+        print("\nSetting up datasets...")
     
     # set up metadata file names:
     if dataset_configs["subset"] == "val":
@@ -181,7 +183,7 @@ if __name__ == "__main__":
     # set image and audio dataset emotion tags:
     image_dataset_tags = list(IMAGE2AUDIO_TAG_MAP.keys())
     audio_dataset_tags = list(IMAGE2AUDIO_TAG_MAP.values())
-
+    
     # test get_image_embeddings() function:
     if verbose:
         print()
@@ -195,7 +197,7 @@ if __name__ == "__main__":
             device=device
         )
     else:
-        image_embeds, image_tags = get_image_embeddings(
+        image_cross_embeds, image_tags = get_image_embeddings(
             model=full_model,
             image_dataset=image_dataset,
             image_dataset_tags=image_dataset_tags,
@@ -206,17 +208,15 @@ if __name__ == "__main__":
     if full_model_configs["multi_task"]:
         assert len(image_intra_embeds) == len(image_cross_embeds) and len(image_cross_embeds) == len(image_tags), "List lengths don't match."
         assert tuple(image_intra_embeds[0].size()) == (full_model.output_embed_dim, ), "Error with shape of image_intra_embeds tensors."
-        assert tuple(image_cross_embeds[0].size()) == (full_model.output_embed_dim, ), "Error with shape of image_cross_embeds tensors."
     else:
-        assert len(image_embeds) == len(image_tags), "List lengths don't match."
-        assert tuple(image_embeds[0].size()) == (full_model.output_embed_dim, ), "Error with shape of image_embeds tensors."
+        assert len(image_cross_embeds) == len(image_tags), "List lengths don't match."
+    assert tuple(image_cross_embeds[0].size()) == (full_model.output_embed_dim, ), "Error with shape of image_cross_embeds tensors."
     if verbose:
         print("Extracted embeddings of {} images.".format(len(image_tags)))
     
 
     # test get_audio_embeddings() function:
     if verbose:
-        print()
         print("\n\nTesting get_audio_embeddings() function...")
     
     if full_model_configs["multi_task"]:
@@ -227,7 +227,7 @@ if __name__ == "__main__":
             device=device
         )
     else:
-        audio_embeds, audio_tags = get_audio_embeddings(
+        audio_cross_embeds, audio_tags = get_audio_embeddings(
             model=full_model,
             audio_dataset=audio_dataset,
             audio_dataset_tags=audio_dataset_tags,
@@ -238,12 +238,56 @@ if __name__ == "__main__":
     if full_model_configs["multi_task"]:
         assert len(audio_intra_embeds) == len(audio_cross_embeds) and len(audio_cross_embeds) == len(audio_tags), "List lengths don't match."
         assert tuple(audio_intra_embeds[0].size()) == (full_model.output_embed_dim, ), "Error with shape of audio_intra_embeds tensors."
-        assert tuple(audio_cross_embeds[0].size()) == (full_model.output_embed_dim, ), "Error with shape of audio_cross_embeds tensors."
     else:
-        assert len(audio_embeds) == len(audio_tags), "List lengths don't match."
-        assert tuple(audio_embeds[0].size()) == (full_model.output_embed_dim, ), "Error with shape of audio_embeds tensors."
+        assert len(audio_cross_embeds) == len(audio_tags), "List lengths don't match."
+    assert tuple(audio_cross_embeds[0].size()) == (full_model.output_embed_dim, ), "Error with shape of audio_cross_embeds tensors."
     if verbose:
         print("Extracted embeddings of {} audio clips.".format(len(audio_tags)))
+    
+
+    # test compute_retrieval_metrics() function:
+    if verbose:
+        print()
+        print("\n\nTesting compute_retrieval_metrics() function...\n")
+    
+    # map image dataset emotion tags to audio dataset emotion tags:
+    image_labels = [IMAGE2AUDIO_TAG_MAP[tag] for tag in image_tags]
+    audio_labels = audio_tags
+    assert set(image_labels) == set(audio_labels), "Error mapping image dataset emotion tags to audio dataset emotion tags."
+
+    # test image-to-music retrieval:
+    print()
+    retrieval_metrics = compute_retrieval_metrics(
+        query_embeds=image_cross_embeds,
+        query_labels=image_labels,
+        item_embeds=audio_cross_embeds,
+        item_labels=audio_labels,
+        metric_names=eval_configs["retrieval_metrics"],
+        k_vals=eval_configs["k_vals"],
+        device=device
+    )
+    print("\nImage-to-music retrieval metrics:")
+    for metric_name, metrics in retrieval_metrics.items():
+        print(f"{metric_name} @ k:")
+        for k_str, value in metrics.items():
+            print("\t{}: {:.2f}%".format(k_str, 100 * np.around(value, decimals=4)))
+    
+    # test music-to-image retrieval:
+    print()
+    retrieval_metrics = compute_retrieval_metrics(
+        query_embeds=audio_cross_embeds,
+        query_labels=audio_labels,
+        item_embeds=image_cross_embeds,
+        item_labels=image_labels,
+        metric_names=eval_configs["retrieval_metrics"],
+        k_vals=eval_configs["k_vals"],
+        device=device
+    )
+    print("\nMusic-to-image retrieval metrics:")
+    for metric_name, metrics in retrieval_metrics.items():
+        print(f"{metric_name} @ k:")
+        for k_str, value in metrics.items():
+            print("\t{}: {:.2f}%".format(k_str, 100 * np.around(value, decimals=4)))
     
 
     print("\n\n")

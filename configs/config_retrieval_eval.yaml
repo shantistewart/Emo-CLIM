@@ -37,7 +37,8 @@ full_model:
 
 # evaluation options:
 eval:
-  # n_workers: 4
+  retrieval_metrics: ["precision", "MRR"]
+  k_vals: [1, 5, 10]
   gpu: 1
 ...
 
