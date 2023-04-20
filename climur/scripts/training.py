@@ -128,19 +128,10 @@ if __name__ == "__main__":
         full_audio_backbone = laion_clap.CLAP_Module(
             enable_fusion=False, amodel='HTSAT-base'
         )
-        """
-        full_audio_backbone = laion_clap.CLAP_Module(
-            enable_fusion=False
-        )
-        """
         
         full_audio_backbone.load_ckpt(
            audio_backbone_configs["pretrained_model_path"]
         )
-        # full_audio_backbone.load_ckpt()
-
-        # full_audio_backbone = laion_clap.CLAP_Module(enable_fusion=False, amodel='HTSAT-base')
-        # full_audio_backbone.load_ckpt("/media/data/projects/speech-privacy/music/pretrained_models/music_speech_epoch_15_esc_89.25.pt")
         
         # create wrapper model:
         sample_audio_input = torch.rand((2, audio_clip_length))
