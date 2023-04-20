@@ -36,7 +36,7 @@ class AudioSetMood(Dataset):
         audio_dir_name (str): Name of subdirectory containing audio files.
     """
 
-    def __init__(self, root: str, metadata_file_name: str, clip_length_samples: int, sample_rate: int = SAMPLE_RATE, emotion_tags_map: Dict = EMOTION_TAGS_MAP, audio_dir_name: str = "audio_files") -> None:
+    def __init__(self, root: str, metadata_file_name: str, clip_length_samples: int, sample_rate: int = SAMPLE_RATE, emotion_tags_map: Dict = EMOTION_TAGS_MAP, audio_dir_name: str = "audio_files", audio_model: str = "ShortChunk") -> None:
         """Initialization.
 
         Args:
@@ -55,11 +55,16 @@ class AudioSetMood(Dataset):
         self.clip_length = clip_length_samples
         self.sample_rate = sample_rate
         self.audio_dir_name = audio_dir_name
+        self.audio_model = audio_model
 
         # load metadata:
         orig_metadata = pd.read_csv(os.path.join(self.root, metadata_file_name))
         # filter out audio clips that are too short:
-        self.metadata = orig_metadata[orig_metadata["length_samples"] >= self.clip_length]
+        if self.audio_model == "CLAP":
+            # CLAP uses 48000 Hz as the input
+            self.metadata = orig_metadata[orig_metadata["length_samples"] >= self.clip_length//3]
+        else:
+            self.metadata = orig_metadata[orig_metadata["length_samples"] >= self.clip_length]
         self.metadata = self.metadata.reset_index(drop=True)
 
         orig_emotion_tags = self.metadata["label"].unique().tolist()
@@ -102,6 +107,13 @@ class AudioSetMood(Dataset):
         file_path = os.path.join(self.root, self.audio_dir_name, orig_subset, file_name)
         # load audio:
         audio, sample_rate = torchaudio.load(file_path)
+        if self.audio_model == "CLAP":
+            audio = torchaudio.functional.resample(
+                audio, 
+                orig_freq=sample_rate, 
+                new_freq=48000
+            )
+            sample_rate = 48000
         audio = audio.squeeze(dim=0)
         assert sample_rate == self.sample_rate, "Unexpected sampling rate."
 
@@ -117,6 +129,12 @@ class AudioSetMood(Dataset):
 
         # get emotion tag:
         tag = self.metadata.loc[idx, "label"]
+
+        # CLAP input requires audio load in int16 format
+        if self.audio_model == "CLAP":
+            audio = np.clip(audio, a_min=-1., a_max=1.)
+            audio = (audio * 32767.).int()
+            audio = (audio / 32767.0).float()
 
         return audio, tag
 
