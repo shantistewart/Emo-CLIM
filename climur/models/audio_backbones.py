@@ -6,8 +6,9 @@ from torch import Tensor
 
 
 # audio input lengths (in samples) each model:
-SHORTCHUNK_INPUT_LENGTH = 59049       # ~3.69 seconds
-HARMONIC_CNN_INPUT_LENGTH = 80000     # 5.0 seconds
+SHORTCHUNK_INPUT_LENGTH     = 59049         # ~3.69 seconds
+HARMONIC_CNN_INPUT_LENGTH   = 80000         # 5.0 seconds
+CLAP_INPUT_LENGTH           = 480000        # 10.0 seconds
 
 
 class ShortChunkCNNEmbeddings(nn.Module):
@@ -190,5 +191,54 @@ class HarmonicCNNEmbeddings(nn.Module):
         assert x.size(dim=-1) == 1, "Time dimension not size 1 in forward pass."
         x = x.squeeze(dim=-1)
 
+        return x
+
+class CLAPEmbeddings(nn.Module):
+    """Wrapper class to extract embeddings from CLAP. Reference: "Large-Scale Contrastive Language-Audio Pretraining with Feature Fusion and Keyword-to-Caption Augmentation", Wu et al., 2023.
+
+    Attributes:
+        model (nn.Module): Model to extract embeddings from CLAP Pretrained model.
+        global_pool (nn.Module): Global pooling layer.
+    """
+
+    def __init__(self, full_model: nn.Module, sample_input: Tensor, last_layer: str = "layer7", pool_type: str = "max") -> None:
+        """Initialization.
+
+        Args:
+            full_model (nn.Module): Full Harmonic CNN model (pretrained).
+            sample_input (Tensor): Sample raw audio input, for determining shape of pooling layer.
+                shape: (batch_size, audio_length)
+            last_layer (str): Name of last layer to include (stop at) for extracting embeddings.
+            pool_type (str): Type of global pooling to use ("average" or "max").
+        
+        Returns: None
+        """
+
+        super(CLAPEmbeddings, self).__init__()
+
+        # validate parameters:
+        if len(tuple(sample_input.size())) != 2:
+            raise ValueError("Invalid sample input shape.")
+        if pool_type not in ["average", "max"]:
+            raise ValueError("Invalid pooling type.")
+        
+        # convert list to nn.Sequential() object:
+        self.model = full_model
+
+    def forward(self, x: Tensor) -> Tensor:
+        """Forward pass.
+
+        Args:
+            x (Tensor): Raw audio input.
+                shape: (batch_size, audio_length)
+        
+        Returns:
+            x (Tensor): Embeddings.
+                shape: (batch_size, embed_dim)
+        """
+        # forward pass through main layers:
+        x = self.model.get_audio_embedding_from_data(
+            x=x.float(), use_tensor=True
+        )
         return x
 

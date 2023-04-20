@@ -35,6 +35,7 @@ REQUIRED = [
     "torchmetrics",
     "tqdm",
     "wget",
+    "laion-clap"
 ]
 
 EXTRAS = {}
