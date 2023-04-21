@@ -272,7 +272,7 @@ if __name__ == "__main__":
     for metric_name, metrics in macro_metrics.items():
         print(f"macro {metric_name} @ k:")
         for k_str, value in metrics.items():
-            print("\t{}: {:.2f}%".format(k_str, 100 * np.around(value, decimals=4)))
+            print("\t{}: {:.2f}%".format(k_str, 100 * value))
     
     # test music-to-image retrieval:
     print()
@@ -289,7 +289,7 @@ if __name__ == "__main__":
     for metric_name, metrics in macro_metrics.items():
         print(f"macro {metric_name} @ k:")
         for k_str, value in metrics.items():
-            print("\t{}: {:.2f}%".format(k_str, 100 * np.around(value, decimals=4)))
+            print("\t{}: {:.2f}%".format(k_str, 100 * value))
 
 
     print("\n\n")

@@ -100,7 +100,16 @@ def compute_retrieval_metrics(query_embeds: List, query_labels: List, item_embed
         macro_metrics[name] = {}
         for k_str in metrics_per_class[name].keys():
             per_class_values = list(metrics_per_class[name][k_str].values())
-            macro_metrics[name][k_str] = np.mean(np.asarray(per_class_values))
-
+            macro_metrics[name][k_str] = np.around(np.mean(np.asarray(per_class_values)), decimals=4)
+    
+    # round per-class retrieval metrics:
+    metrics_per_class = {}
+    for name in all_metrics.keys():
+        metrics_per_class[name] = {}
+        for k_str in all_metrics[name].keys():
+            metrics_per_class[name][k_str] = {}
+            for label in query_label_set:
+                metrics_per_class[name][k_str][label] = np.around(np.mean(np.asarray(all_metrics[name][k_str][label])), decimals=4)
+    
     return macro_metrics, metrics_per_class
 
