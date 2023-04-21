@@ -37,6 +37,7 @@ full_model:
 
 # evaluation options:
 eval:
+  overlap_ratio: 0.0     # can try values in [0.0, 0.5, 0.9]
   retrieval_metrics: ["precision", "MRR"]
   k_vals: [1, 5, 10]
   gpu: 1

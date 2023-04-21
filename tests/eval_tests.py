@@ -135,11 +135,13 @@ if __name__ == "__main__":
         preprocess=image_preprocess_transform
     )
     # create audio dataset:
-    audio_dataset = AudioSetMood(     # TODO: Add eval=True when this is added to dataset class.
+    audio_dataset = AudioSetMood(
         root=dataset_configs["audio_dataset_dir"],
         metadata_file_name=audio_dataset_metadata_file,
         clip_length_samples=audio_clip_length,
         sample_rate=dataset_configs["sample_rate"],
+        eval=True,
+        overlap_ratio=eval_configs["overlap_ratio"]
     )
 
 
