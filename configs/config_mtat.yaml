@@ -1,0 +1,46 @@
+# Config file for supervised training for MTAT.
+
+
+# dataset options:
+dataset:
+  subset: "train"     # in ["train", "valid", "test"]
+  dataset_dir: "/data/avramidi/VCMR/data/magnatagatune"
+  sample_rate: 16000
+  random_seed: 42
+
+# image backbone options:
+image_backbone:
+  embed_dim: 512
+# audio backbone options:
+audio_backbone:
+  model_name: "HarmonicCNN"     # or "ShortChunk"
+  embed_dim: 256     # or 512
+  last_layer_embed: "layer7"
+  pool_type: "max"
+
+# full model options:
+full_model:
+  checkpoint_path: "/home/systewar/CLIMuR/train_logs/multi_task/HarmonicCNN/frozen/all_losses/version_0/checkpoints/epoch=15-step=1600.ckpt"
+  output_embed_dim: 128
+  base_proj_output_dim: 128
+  normalize_audio_embeds: true
+  freeze_audio_backbone: true     # TODO: Probably can remove this.
+
+# training options:
+training:
+  batch_size: 64
+  max_epochs: 30
+  optimizer: "AdamW"
+  learn_rate: 0.001
+  val_check_interval: 1.0     # how often to check validation set within a single training epoch
+  n_workers: 4
+  gpu: 1
+
+# logging options:
+# note: logs are saved to log_dir/experiment_name/experiment_version/
+logging:
+  log_dir: "/home/systewar/CLIMuR/train_logs"
+  experiment_name: "mtat/HarmonicCNN/frozen/"
+  experiment_version: null  # automatic versioning if set to null (recommended)
+  log_every_n_steps: 20     # how often to log
+
