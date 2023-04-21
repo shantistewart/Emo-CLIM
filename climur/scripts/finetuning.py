@@ -34,7 +34,9 @@ if __name__ == "__main__":
 
     # parse command-line arguments:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config_file", nargs="?", const=CONFIG_FILE, default=CONFIG_FILE)
+    parser.add_argument(
+        "--config_file", nargs="?", const=CONFIG_FILE, default=CONFIG_FILE
+    )
     args = parser.parse_args()
 
     # set PyTorch warnings:
@@ -56,7 +58,11 @@ if __name__ == "__main__":
 
     # get device:
     gpu_id = training_configs["gpu"]
-    device = torch.device(f"cuda:{gpu_id}") if torch.cuda.is_available() else torch.device("cpu")
+    device = (
+        torch.device(f"cuda:{gpu_id}")
+        if torch.cuda.is_available()
+        else torch.device("cpu")
+    )
     # set random seed if selected:
     if dataset_configs["random_seed"]:
         pl.seed_everything(dataset_configs["random_seed"], workers=True)
@@ -106,11 +112,6 @@ if __name__ == "__main__":
         audio_clip_length = SHORTCHUNK_INPUT_LENGTH
         # load pretrained full Short-Chunk CNN ResNet model:
         full_audio_backbone = ShortChunkCNN_Res()
-        full_audio_backbone.load_state_dict(
-            torch.load(
-                audio_backbone_configs["pretrained_model_path"], map_location=torch.device("cpu")
-            )
-        )
         # create wrapper model:
         sample_audio_input = torch.rand((2, audio_clip_length))
         audio_backbone = ShortChunkCNNEmbeddings(
@@ -124,11 +125,6 @@ if __name__ == "__main__":
         audio_clip_length = HARMONIC_CNN_INPUT_LENGTH
         # load pretrained full Harmonic CNN model:
         full_audio_backbone = HarmonicCNN()
-        full_audio_backbone.load_state_dict(
-            torch.load(
-                audio_backbone_configs["pretrained_model_path"], map_location=torch.device("cpu")
-            )
-        )
         # create wrapper model:
         sample_audio_input = torch.rand((2, audio_clip_length))
         audio_backbone = HarmonicCNNEmbeddings(
@@ -141,7 +137,9 @@ if __name__ == "__main__":
         # set audio input length:
         audio_clip_length = CLAP_INPUT_LENGTH
         # load pretrained full CLAP model:
-        full_audio_backbone = laion_clap.CLAP_Module(enable_fusion=False, amodel="HTSAT-base")
+        full_audio_backbone = laion_clap.CLAP_Module(
+            enable_fusion=False, amodel="HTSAT-base"
+        )
 
         full_audio_backbone.load_ckpt(audio_backbone_configs["pretrained_model_path"])
 
@@ -154,7 +152,9 @@ if __name__ == "__main__":
             pool_type=audio_backbone_configs["pool_type"],
         )
     else:
-        raise ValueError("{} model not supported".format(audio_backbone_configs["model_name"]))
+        raise ValueError(
+            "{} model not supported".format(audio_backbone_configs["model_name"])
+        )
 
     audio_backbone.to(device)
 
@@ -195,7 +195,7 @@ if __name__ == "__main__":
         print("\nSetting up full model and logger...")
 
     full_model = Image2Music.load_from_checkpoint(
-        full_model_configs["checkpoint_path"],
+        checkpoint_path=full_model_configs["checkpoint_path"],
         image_backbone=image_backbone,
         audio_backbone=audio_backbone,
         output_embed_dim=full_model_configs["output_embed_dim"],
@@ -239,8 +239,12 @@ if __name__ == "__main__":
     # --------
 
     # create trainer:
-    model_ckpt_callback = ModelCheckpoint(monitor="validation/pr_auc", mode="max", save_top_k=1)
-    early_stop_callback = EarlyStopping(monitor="validation/loss", mode="min", patience=10)
+    model_ckpt_callback = ModelCheckpoint(
+        monitor="validation/pr_auc", mode="max", save_top_k=1
+    )
+    early_stop_callback = EarlyStopping(
+        monitor="validation/loss", mode="min", patience=10
+    )
     trainer = Trainer(
         logger=logger,
         max_epochs=training_configs["max_epochs"],
@@ -253,7 +257,9 @@ if __name__ == "__main__":
         # deterministic="warn",     # set when running training sessions for reproducibility
     )
     # train model:
-    trainer.fit(full_model, train_dataloaders=train_loader, val_dataloaders=valid_loader)
+    trainer.fit(
+        full_model, train_dataloaders=train_loader, val_dataloaders=valid_loader
+    )
 
     # ----------
     # EVALUATION

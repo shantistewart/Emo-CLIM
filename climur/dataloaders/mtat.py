@@ -95,9 +95,11 @@ class MTAT(Dataset):
         self.subset = subset
         self.split = split
         self.duration = duration
+        self.overlap_ratio = 0
 
         assert subset is None or subset in ["train", "valid", "test"], (
-            "When `subset` not None, it must take a value from " + "{'train', 'valid', 'test'}."
+            "When `subset` not None, it must take a value from "
+            + "{'train', 'valid', 'test'}."
         )
 
         self._path = os.path.join(root, folder_in_archive)
@@ -118,9 +120,6 @@ class MTAT(Dataset):
                     download_url_to_file(
                         url,
                         self._path,
-                        filename=target_fn,
-                        hash_value=checksum,
-                        hash_type="md5",
                     )
 
             if not os.path.exists(
@@ -142,7 +141,9 @@ class MTAT(Dataset):
                     f.extractall()
 
         if not os.path.isdir(self._path):
-            raise RuntimeError("Dataset not found. Please use `download=True` to download it.")
+            raise RuntimeError(
+                "Dataset not found. Please use `download=True` to download it."
+            )
 
         self.fl, self.binary = get_file_list(self._path, self.subset, self.split)
         self.n_classes = len(self.label_list)
@@ -169,7 +170,7 @@ class MTAT(Dataset):
             )
             p.wait()
 
-    def segment_audio_sample(self):
+    def segment_audio_sample(self, audio):
         audio_len = audio.shape[0]
         segment_len = int(self.duration * self.sr)
 
@@ -189,7 +190,8 @@ class MTAT(Dataset):
             audio_chunks = audio.unfold(dimension=0, size=self.duration, step=step)
             # sanity check shape:
             assert (
-                len(tuple(audio_chunks.size())) == 2 and audio_chunks.size(dim=-1) == self.duration
+                len(tuple(audio_chunks.size())) == 2
+                and audio_chunks.size(dim=-1) == self.duration
             ), "Error with shape of chunked audio clip."
 
         return audio
@@ -203,8 +205,7 @@ class MTAT(Dataset):
         if sr != self.sr:
             resample = torchaudio.transforms.Resample(sr, self.sr)
             audio = resample(audio)
-        print(audio.shape)
-        audio = self.segment_audio_sample(audio.squeeze(0))
+        audio = self.segment_audio_sample(audio.squeeze())
         return audio, FloatTensor(label)
 
     def __len__(self) -> int:
@@ -213,7 +214,10 @@ class MTAT(Dataset):
 
 if __name__ == "__main__":
     dataset = MTAT(
-        root="/data/avramidi/VCMR/data/magnatagatune", download=True, subset="valid", sr=16000
+        root="/data/avramidi/magnatagatune/",
+        download=False,
+        subset="test",
+        sr=16000,
     )
     print(len(dataset))
     print(dataset[0][0].shape)

@@ -36,6 +36,7 @@ downloads/
 eggs/
 .eggs/
 lib/
+ckpt/
 lib64/
 parts/
 sdist/

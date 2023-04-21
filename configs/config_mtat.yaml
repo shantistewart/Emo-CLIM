@@ -4,7 +4,7 @@
 # dataset options:
 dataset:
   subset: "train"     # in ["train", "valid", "test"]
-  dataset_dir: "/data/avramidi/VCMR/data/magnatagatune"
+  dataset_dir: "/data/avramidi/magnatagatune"
   sample_rate: 16000
   random_seed: 42
 
@@ -20,11 +20,17 @@ audio_backbone:
 
 # full model options:
 full_model:
-  checkpoint_path: "/home/systewar/CLIMuR/train_logs/multi_task/HarmonicCNN/frozen/all_losses/version_0/checkpoints/epoch=15-step=1600.ckpt"
+  checkpoint_path: "/home/avramidi/CLIMuR/ckpt/epoch=15-step=1600.ckpt"
   output_embed_dim: 128
+  multi_task: true
+  base_proj_hidden_dim: 256
+  base_proj_dropout: 0.2
   base_proj_output_dim: 128
+  task_proj_dropout: 0.5
+  normalize_image_embeds: true
   normalize_audio_embeds: true
-  freeze_audio_backbone: true     # TODO: Probably can remove this.
+  freeze_image_backbone: true
+  freeze_audio_backbone: true
 
 # training options:
 training:
