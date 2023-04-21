@@ -237,9 +237,9 @@ if __name__ == "__main__":
         print("\n\n\nRunning retrieval evaluations...\n")
     
     # create directories for saving results:
-    os.makedirs(eval_configs["results_dir"], exist_ok=True)
-    os.makedirs(os.path.join(eval_configs["results_dir"], "macro"), exist_ok=True)
-    os.makedirs(os.path.join(eval_configs["results_dir"], "per_class"), exist_ok=True)
+    os.makedirs(eval_configs["results_dir"], exist_ok=False)
+    os.makedirs(os.path.join(eval_configs["results_dir"], "macro"), exist_ok=False)
+    os.makedirs(os.path.join(eval_configs["results_dir"], "per_class"), exist_ok=False)
 
     # map image dataset emotion tags to audio dataset emotion tags:
     image_labels = [IMAGE2AUDIO_TAG_MAP[tag] for tag in image_tags]
