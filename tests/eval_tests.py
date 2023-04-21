@@ -259,7 +259,7 @@ if __name__ == "__main__":
 
     # test image-to-music retrieval:
     print()
-    retrieval_metrics = compute_retrieval_metrics(
+    macro_metrics, metrics_per_class = compute_retrieval_metrics(
         query_embeds=image_cross_embeds,
         query_labels=image_labels,
         item_embeds=audio_cross_embeds,
@@ -269,14 +269,14 @@ if __name__ == "__main__":
         device=device
     )
     print("\nImage-to-music retrieval metrics:")
-    for metric_name, metrics in retrieval_metrics.items():
-        print(f"{metric_name} @ k:")
+    for metric_name, metrics in macro_metrics.items():
+        print(f"macro {metric_name} @ k:")
         for k_str, value in metrics.items():
             print("\t{}: {:.2f}%".format(k_str, 100 * np.around(value, decimals=4)))
     
     # test music-to-image retrieval:
     print()
-    retrieval_metrics = compute_retrieval_metrics(
+    macro_metrics, metrics_per_class = compute_retrieval_metrics(
         query_embeds=audio_cross_embeds,
         query_labels=audio_labels,
         item_embeds=image_cross_embeds,
@@ -286,11 +286,11 @@ if __name__ == "__main__":
         device=device
     )
     print("\nMusic-to-image retrieval metrics:")
-    for metric_name, metrics in retrieval_metrics.items():
-        print(f"{metric_name} @ k:")
+    for metric_name, metrics in macro_metrics.items():
+        print(f"macro {metric_name} @ k:")
         for k_str, value in metrics.items():
             print("\t{}: {:.2f}%".format(k_str, 100 * np.around(value, decimals=4)))
-    
+
 
     print("\n\n")
 
