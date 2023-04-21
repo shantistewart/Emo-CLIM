@@ -2,13 +2,11 @@ import os, numpy as np, subprocess
 import torch, torchaudio
 from typing import Tuple, Optional
 from torch.utils.data import Dataset
+from torch.hub import download_url_to_file
 
 torchaudio.set_audio_backend("soundfile")
 from torch import Tensor, FloatTensor
-from torchaudio.datasets.utils import (
-    download_url,
-    extract_archive,
-)
+from zipfile import ZipFile
 
 FOLDER_IN_ARCHIVE = ""
 _CHECKSUMS = {
@@ -117,7 +115,7 @@ class MTAT(Dataset):
                     zip_files.append(target_fp)
 
                 if not os.path.exists(target_fp):
-                    download_url(
+                    download_url_to_file(
                         url,
                         self._path,
                         filename=target_fn,
@@ -139,7 +137,9 @@ class MTAT(Dataset):
                         with open(filename, "rb") as g:
                             f.write(g.read())
 
-                extract_archive(merged_zip)
+                # extract_archive(merged_zip)
+                with ZipFile(merged_zip, "r") as f:
+                    f.extractall()
 
         if not os.path.isdir(self._path):
             raise RuntimeError("Dataset not found. Please use `download=True` to download it.")
@@ -213,7 +213,7 @@ class MTAT(Dataset):
 
 if __name__ == "__main__":
     dataset = MTAT(
-        root="/data/avramidi/VCMR/data/magnatagatune", download=False, subset="valid", sr=16000
+        root="/data/avramidi/VCMR/data/magnatagatune", download=True, subset="valid", sr=16000
     )
     print(len(dataset))
     print(dataset[0][0].shape)
