@@ -70,18 +70,21 @@ if __name__ == "__main__":
         download=False,
         subset=dataset_configs["subset"],
         sr=dataset_configs["sample_rate"],
+        duration=HARMONIC_CNN_INPUT_LENGTH,
     )
     valid_dataset = MTAT(
         root=dataset_configs["dataset_dir"],
         download=False,
         subset="valid",
         sr=dataset_configs["sample_rate"],
+        duration=HARMONIC_CNN_INPUT_LENGTH,
     )
     test_dataset = MTAT(
         root=dataset_configs["dataset_dir"],
         download=False,
         subset="test",
         sr=dataset_configs["sample_rate"],
+        duration=HARMONIC_CNN_INPUT_LENGTH,
     )
 
     # ---------------
