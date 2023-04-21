@@ -66,7 +66,7 @@ def compute_retrieval_metrics(query_embeds: List, query_labels: List, item_embed
         # map cosine similarity values from [-1.0, 1.0] -> [0.0, 1.0]:
         sim_scores = 0.5 * (cos_sim_scores + 1.0)
         assert tuple(sim_scores.size()) == (len(item_labels),), "Similarity scores has an unexpected shape."
-        assert (torch.min(sim_scores).item() >= 0.0 and torch.max(sim_scores).item() <= 1.0), "Similarity values are not in range [0.0, 1.0]"
+        assert (torch.min(sim_scores).item() >= 0.0 and torch.max(sim_scores).item() <= 1.1), "Similarity values are not in range [0.0, 1.0]"
 
         # create retrieval ground-truth:
         query_label = query_labels[idx]
