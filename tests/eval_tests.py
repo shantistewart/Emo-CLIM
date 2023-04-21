@@ -266,7 +266,8 @@ if __name__ == "__main__":
         item_labels=audio_labels,
         metric_names=eval_configs["retrieval_metrics"],
         k_vals=eval_configs["k_vals"],
-        device=device
+        device=device,
+        mode="cross-modal"
     )
     print("\nImage-to-music retrieval metrics:")
     for metric_name, metrics in macro_metrics.items():
@@ -283,7 +284,8 @@ if __name__ == "__main__":
         item_labels=image_labels,
         metric_names=eval_configs["retrieval_metrics"],
         k_vals=eval_configs["k_vals"],
-        device=device
+        device=device,
+        mode="cross-modal"
     )
     print("\nMusic-to-image retrieval metrics:")
     for metric_name, metrics in macro_metrics.items():

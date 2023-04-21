@@ -1,38 +1,38 @@
 {
    "precision": {
       "k=1": {
-         "sad": 0.7246,
-         "angry": 0.8211,
-         "happy": 0.6348,
          "funny": 0.6444,
+         "sad": 0.7246,
+         "scary": 0.7786,
          "exciting": 0.3654,
-         "scary": 0.7786
+         "happy": 0.6348,
+         "angry": 0.8211
       },
       "k=5": {
-         "sad": 0.7391,
-         "angry": 0.8547,
-         "happy": 0.6139,
          "funny": 0.6244,
+         "sad": 0.7391,
+         "scary": 0.7443,
          "exciting": 0.4044,
-         "scary": 0.7443
+         "happy": 0.6139,
+         "angry": 0.8547
       },
       "k=10": {
-         "sad": 0.7514,
-         "angry": 0.8547,
-         "happy": 0.5939,
          "funny": 0.6267,
+         "sad": 0.7514,
+         "scary": 0.7379,
          "exciting": 0.4315,
-         "scary": 0.7379
+         "happy": 0.5939,
+         "angry": 0.8547
       }
    },
    "MRR": {
       "k=N/A": {
-         "sad": 0.8138,
-         "angry": 0.8691,
-         "happy": 0.7176,
          "funny": 0.7582,
+         "sad": 0.8138,
+         "scary": 0.8565,
          "exciting": 0.5043,
-         "scary": 0.8565
+         "happy": 0.7176,
+         "angry": 0.8691
       }
    }
 }

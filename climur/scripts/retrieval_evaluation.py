@@ -257,7 +257,8 @@ if __name__ == "__main__":
         item_labels=audio_labels,
         metric_names=eval_configs["retrieval_metrics"],
         k_vals=eval_configs["k_vals"],
-        device=device
+        device=device,
+        mode="cross-modal"
     )
     # save to json files:
     with open(os.path.join(eval_configs["results_dir"], "macro", "image2music_retrieval.json"), "w") as json_file:
@@ -275,7 +276,8 @@ if __name__ == "__main__":
         item_labels=image_labels,
         metric_names=eval_configs["retrieval_metrics"],
         k_vals=eval_configs["k_vals"],
-        device=device
+        device=device,
+        mode="cross-modal"
     )
     # save to json files:
     with open(os.path.join(eval_configs["results_dir"], "macro", "music2image_retrieval.json"), "w") as json_file:
@@ -295,7 +297,8 @@ if __name__ == "__main__":
             item_labels=image_labels,
             metric_names=eval_configs["retrieval_metrics"],
             k_vals=eval_configs["k_vals"],
-            device=device
+            device=device,
+            mode="intra-modal"
         )
     else:
         macro_metrics, metrics_per_class = compute_retrieval_metrics(
@@ -305,7 +308,8 @@ if __name__ == "__main__":
             item_labels=image_labels,
             metric_names=eval_configs["retrieval_metrics"],
             k_vals=eval_configs["k_vals"],
-            device=device
+            device=device,
+            mode="intra-modal"
         )
     # save to json files:
     with open(os.path.join(eval_configs["results_dir"], "macro", "image2image_retrieval.json"), "w") as json_file:
@@ -324,7 +328,8 @@ if __name__ == "__main__":
             item_labels=audio_labels,
             metric_names=eval_configs["retrieval_metrics"],
             k_vals=eval_configs["k_vals"],
-            device=device
+            device=device,
+            mode="intra-modal"
         )
     else:
         macro_metrics, metrics_per_class = compute_retrieval_metrics(
@@ -334,7 +339,8 @@ if __name__ == "__main__":
             item_labels=audio_labels,
             metric_names=eval_configs["retrieval_metrics"],
             k_vals=eval_configs["k_vals"],
-            device=device
+            device=device,
+            mode="intra-modal"
         )
     # save to json files:
     with open(os.path.join(eval_configs["results_dir"], "macro", "music2music_retrieval.json"), "w") as json_file:
