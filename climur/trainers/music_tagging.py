@@ -3,10 +3,10 @@
 
 from pytorch_lightning import LightningModule
 import torch, torch.nn as nn
-from torchmetrics import AveragePrecision, functional
+from torchmetrics import AveragePrecision
 from typing import Dict, Any
 from climur.utils.eval import get_embedding_ds
-from sklearn.metrics import average_precision_score
+from sklearn.metrics import average_precision_score, roc_auc_score
 
 
 class MTAT_Training(LightningModule):
@@ -42,6 +42,7 @@ class MTAT_Training(LightningModule):
         self.out_dim = num_classes
         self.torch_device = device
         self.backbone = backbone
+        self.backbone.eval()
 
         # create base audio projector:
         self.projector = nn.Sequential(
@@ -53,11 +54,11 @@ class MTAT_Training(LightningModule):
 
         # create loss functions:
         self.criterion = nn.BCEWithLogitsLoss()
+        #self.pr_auc = AveragePrecision(task="multilabel", pos_label=1)
 
     def forward(self, audios: torch.Tensor):
         embeds = get_embedding_ds(self.backbone, audios)
-        print(embeds.shape)
-        return self.projector(embeds)
+        return self.projector(embeds[0])
 
     def training_step(self, batch: Dict, _: int) -> torch.Tensor:
         """Training step.
@@ -72,9 +73,7 @@ class MTAT_Training(LightningModule):
         Returns:
             loss (torch.Tensor): BCE loss.
         """
-        print("HI@")
         audios, labels = batch
-        print(labels.shape)
         # send to device if required:
         if self.torch_device is not None:
             audios = audios.to(self.torch_device)
@@ -107,12 +106,10 @@ class MTAT_Training(LightningModule):
         predictions = self.forward(audios)
         # evaluate:
         loss = self.criterion(predictions, labels)
-        pr_auc = average_precision_score(labels, predictions)
-        roc_auc = functional.auroc(predictions, labels)
+        #pr_auc = self.pr_auc(predictions, labels)
         # log results:
         self.log("validation/loss", loss)
-        self.log("validation/pr_auc", pr_auc)
-        self.log("validation/roc_auc", roc_auc)
+        #self.log("validation/pr_auc", pr_auc)
         return loss
 
     def configure_optimizers(self) -> Any:
@@ -130,4 +127,4 @@ class MTAT_Training(LightningModule):
             optimizer = torch.optim.AdamW(self.parameters(), lr=self.hparams.learn_rate)
         else:
             raise ValueError("Invalid optimizer.")
-        return optimizer
+        return {"optimizer": optimizer}
