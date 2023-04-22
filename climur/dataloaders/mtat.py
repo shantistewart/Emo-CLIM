@@ -3,6 +3,7 @@ import torch, torchaudio
 from typing import Tuple, Optional
 from torch.utils.data import Dataset
 from torch.hub import download_url_to_file
+from torchaudio_augmentations import RandomResizedCrop
 
 torchaudio.set_audio_backend("soundfile")
 from torch import Tensor, FloatTensor
@@ -177,14 +178,27 @@ class MTAT(Dataset):
         if audio_len < segment_len:
             audio = torch.cat([audio, torch.zeros(segment_len - audio_len)])
 
-        # split audio clip into chunks:
-        step = int(np.around((1 - self.overlap_ratio) * self.clip_length))
-        audio_chunks = audio.unfold(dimension=0, size=self.clip_length, step=step)
-        # sanity check shape:
-        assert (
-            len(tuple(audio_chunks.size())) == 2
-            and audio_chunks.size(dim=-1) == self.clip_length
-        ), "Error with shape of chunked audio clip."
+        if self.subset != "test":
+            # randomly crop to target clip length:
+            transform = RandomResizedCrop(n_samples=self.clip_length)
+            audio_chunks = transform(audio)
+            #start_idx = np.random.randint(low=0, high=audio_len - self.clip_length + 1)
+            #end_idx = start_idx + self.clip_length
+            #audio_chunks = audio[start_idx : end_idx]
+            #assert (
+            #    audio.size(dim=0) == self.clip_length, 
+            #    "Error with cropping audio clip."
+            #)
+        else:
+            # split audio clip into chunks:
+            step = int(np.around((1 - self.overlap_ratio) * self.clip_length))
+            audio_chunks = audio.unfold(dimension=0, size=self.clip_length, step=step)
+            # sanity check shape:
+            assert (
+                len(tuple(audio_chunks.size())) == 2 \
+                and audio_chunks.size(dim=-1) == self.clip_length,
+                "Error with shape of chunked audio clip."
+            )
         return audio_chunks
 
     def __getitem__(self, n: int) -> Tuple[Tensor, Tensor]:
