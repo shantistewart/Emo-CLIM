@@ -83,7 +83,7 @@ class MTAT(Dataset):
         download: Optional[bool] = False,
         subset: Optional[str] = None,
         split: Optional[str] = "pons2017",
-        sr: int = 22050,
+        sr: int = 16000,
         duration: int = 30,
     ) -> None:
 
@@ -94,7 +94,7 @@ class MTAT(Dataset):
         self.download = download
         self.subset = subset
         self.split = split
-        self.duration = duration
+        self.clip_length = duration
         self.overlap_ratio = 0
 
         assert subset is None or subset in ["train", "valid", "test"], (
@@ -172,29 +172,20 @@ class MTAT(Dataset):
 
     def segment_audio_sample(self, audio):
         audio_len = audio.shape[0]
-        segment_len = int(self.duration * self.sr)
+        segment_len = int(self.clip_length * self.sr)
 
         if audio_len < segment_len:
             audio = torch.cat([audio, torch.zeros(segment_len - audio_len)])
 
-        if self.subset == "train":
-            # randomly crop to target clip length:
-            start_idx = np.random.randint(low=0, high=audio_len - self.duration + 1)
-            end_idx = start_idx + self.duration
-            audio = audio[start_idx:end_idx]
-            assert audio.size(dim=0) == self.duration, "Error with cropping audio clip."
-
-        else:
-            # split audio clip into chunks:
-            step = int(np.around((1 - self.overlap_ratio) * self.duration))
-            audio_chunks = audio.unfold(dimension=0, size=self.duration, step=step)
-            # sanity check shape:
-            assert (
-                len(tuple(audio_chunks.size())) == 2
-                and audio_chunks.size(dim=-1) == self.duration
-            ), "Error with shape of chunked audio clip."
-
-        return audio
+        # split audio clip into chunks:
+        step = int(np.around((1 - self.overlap_ratio) * self.clip_length))
+        audio_chunks = audio.unfold(dimension=0, size=self.clip_length, step=step)
+        # sanity check shape:
+        assert (
+            len(tuple(audio_chunks.size())) == 2
+            and audio_chunks.size(dim=-1) == self.clip_length
+        ), "Error with shape of chunked audio clip."
+        return audio_chunks
 
     def __getitem__(self, n: int) -> Tuple[Tensor, Tensor]:
         clip_id, _ = self.fl[n].split("\t")

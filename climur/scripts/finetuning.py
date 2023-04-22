@@ -195,7 +195,7 @@ if __name__ == "__main__":
         print("\nSetting up full model and logger...")
 
     full_model = Image2Music.load_from_checkpoint(
-        checkpoint_path=full_model_configs["checkpoint_path"],
+        full_model_configs["checkpoint_path"],
         image_backbone=image_backbone,
         audio_backbone=audio_backbone,
         output_embed_dim=full_model_configs["output_embed_dim"],
@@ -213,17 +213,13 @@ if __name__ == "__main__":
         device=device,
     )
     full_model.to(device)
-    # set to eval mode:
-    full_model.eval()
 
     # create MTAT trainer:
     mtat_model = MTAT_Training(
-        audio_backbone=audio_backbone,
-        output_embed_dim=full_model_configs["output_embed_dim"],
-        audio_embed_dim=audio_backbone_configs["embed_dim"],
-        hparams=full_model_configs["checkpoint_path"],
-        normalize_audio_embeds=full_model_configs["normalize_audio_embeds"],
-        freeze_audio_backbone=full_model_configs["freeze_audio_backbone"],
+        backbone=full_model,
+        embed_dim=full_model_configs["output_embed_dim"],
+        hparams=full_model_configs,
+        num_classes=full_model_configs["n_classes"],
         device=device,
     )
 
@@ -245,6 +241,7 @@ if __name__ == "__main__":
     early_stop_callback = EarlyStopping(
         monitor="validation/loss", mode="min", patience=10
     )
+    print("HI")
     trainer = Trainer(
         logger=logger,
         max_epochs=training_configs["max_epochs"],
