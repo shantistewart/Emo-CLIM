@@ -39,7 +39,7 @@ full_model:
 eval:
   results_dir: "results_val/single_task/HarmonicCNN/frozen/all_losses"
   overlap_ratio: 0.75
-  retrieval_metrics: ["precision", "MRR"]
+  retrieval_metrics: ["precision", "MRR", "MAP"]
   k_vals: [1, 5, 10]
   gpu: 1
 ...

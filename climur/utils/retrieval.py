@@ -3,13 +3,13 @@
 
 import torch
 import torch.nn.functional as F
-from torchmetrics.functional import retrieval_precision, retrieval_reciprocal_rank
+from torchmetrics.functional import retrieval_precision, retrieval_reciprocal_rank, retrieval_average_precision
 import numpy as np
 import tqdm
 from typing import Dict, List, Tuple, Any
 
 
-SUPPORTED_RETRIEVAL_METRICS = ["precision", "MRR"]
+SUPPORTED_RETRIEVAL_METRICS = ["precision", "MRR", "MAP"]
 
 
 def compute_retrieval_metrics(query_embeds: List, query_labels: List, item_embeds: List, item_labels: List, metric_names: List, k_vals: List, device: Any, mode: str = "cross-modal") -> Tuple[Dict, Dict]:
@@ -60,7 +60,7 @@ def compute_retrieval_metrics(query_embeds: List, query_labels: List, item_embed
                 all_metrics[name][f"k={k}"] = {}
                 for label in query_label_set:
                     all_metrics[name][f"k={k}"][label] = []
-        elif name == "MRR":
+        else:
             all_metrics[name][f"k=N/A"] = {}
             for label in query_label_set:
                 all_metrics[name][f"k=N/A"][label] = []
@@ -109,6 +109,9 @@ def compute_retrieval_metrics(query_embeds: List, query_labels: List, item_embed
             elif name == "MRR":
                 reciprocal_rank = retrieval_reciprocal_rank(sim_scores, retrieval_gt).item()
                 all_metrics[name][f"k=N/A"][query_label].append(reciprocal_rank)
+            elif name == "MAP":
+                avg_precision = retrieval_average_precision(sim_scores, retrieval_gt).item()
+                all_metrics[name][f"k=N/A"][query_label].append(avg_precision)
     
     # compute mean of per-query retrieval metrics for each emotion class label:
     metrics_per_class = {}
