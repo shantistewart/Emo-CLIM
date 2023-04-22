@@ -169,22 +169,19 @@ if __name__ == "__main__":
         train_dataset,
         batch_size=training_configs["batch_size"],
         shuffle=True,
-        num_workers=training_configs["n_workers"],
         drop_last=True,
     )
     valid_loader = DataLoader(
         valid_dataset,
         batch_size=training_configs["batch_size"],
         shuffle=False,
-        num_workers=training_configs["n_workers"],
-        drop_last=True,
+        drop_last=False,
     )
     test_loader = DataLoader(
         test_dataset,
         batch_size=training_configs["batch_size"],
         shuffle=False,
-        num_workers=training_configs["n_workers"],
-        drop_last=True,
+        drop_last=False,
     )
 
     # -------------------
@@ -213,12 +210,13 @@ if __name__ == "__main__":
         device=device,
     )
     full_model.to(device)
+    full_model.eval()
 
     # create MTAT trainer:
     mtat_model = MTAT_Training(
         backbone=full_model,
         embed_dim=full_model_configs["output_embed_dim"],
-        hparams=full_model_configs,
+        hparams=training_configs,
         num_classes=full_model_configs["n_classes"],
         device=device,
     )
@@ -241,7 +239,6 @@ if __name__ == "__main__":
     early_stop_callback = EarlyStopping(
         monitor="validation/loss", mode="min", patience=10
     )
-    print("HI")
     trainer = Trainer(
         logger=logger,
         max_epochs=training_configs["max_epochs"],
@@ -255,7 +252,7 @@ if __name__ == "__main__":
     )
     # train model:
     trainer.fit(
-        full_model, train_dataloaders=train_loader, val_dataloaders=valid_loader
+        mtat_model, train_dataloaders=train_loader, val_dataloaders=valid_loader
     )
 
     # ----------
