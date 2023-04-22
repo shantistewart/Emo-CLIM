@@ -37,7 +37,7 @@ full_model:
 
 # evaluation options:
 eval:
-  results_dir: "results/single_task/HarmonicCNN/frozen/all_losses"
+  results_dir: "results_val/single_task/HarmonicCNN/frozen/all_losses"
   overlap_ratio: 0.75
   retrieval_metrics: ["precision", "MRR"]
   k_vals: [1, 5, 10]
