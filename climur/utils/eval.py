@@ -197,25 +197,9 @@ def get_embedding_ds(model, audio_chunks):
             chunk_intra_embeds, chunk_cross_embeds = model.compute_audio_embeds(
                 audio_chunks
             )
-        # compute mean over chunks:
-        intra_embed = chunk_intra_embeds.mean(dim=0)
-        cross_embed = chunk_cross_embeds.mean(dim=0)
-
-        assert tuple(intra_embed.size()) == (
-            model.output_embed_dim,
-        ), "Error with shape of intra_embed."
-        assert tuple(cross_embed.size()) == (
-            model.output_embed_dim,
-        ), "Error with shape of cross_embed."
-        return intra_embed, cross_embed
+        return chunk_intra_embeds, chunk_cross_embeds
 
     else:
         with torch.no_grad():
             chunk_embeds = model.compute_audio_embeds(audio_chunks)
-        # compute mean over chunks:
-        embed = chunk_embeds.mean(dim=0)
-
-        assert tuple(embed.size()) == (
-            model.output_embed_dim,
-        ), "Error with shape of embed."
-        return embed
+        return chunk_embeds
