@@ -13,23 +13,20 @@ dataset:
   sample_rate: 16000
   random_seed: 42
 
-# data augmentation options (TODO):
-
-# image backbone options:
-image_backbone:
-  embed_dim: 512
 # audio backbone options:
 audio_backbone:
   model_name: "HarmonicCNN"     # or "ShortChunk"
-  pretrained_model_path: "/proj/systewar/pretrained_models/music_tagging/msd/harmonic_cnn/best_model.pth"     # or "/proj/systewar/pretrained_models/music_tagging/msd/short_chunk_resnet/best_model.pth"
-  embed_dim: 256     # or 512
+  pretrained_model_paths:
+    HarmonicCNN: "/proj/systewar/pretrained_models/music_tagging/msd/harmonic_cnn/best_model.pth"
+    ShortChunk: "/proj/systewar/pretrained_models/music_tagging/msd/short_chunk_resnet/best_model.pth"
+    CLAP: "/project/shrikann_35/tiantiaf/music/music/pretrained_models/music_speech_epoch_15_esc_89.25.pt"
   last_layer_embed: "layer7"
   pool_type: "max"
 
 # full model options:
 full_model:
   output_embed_dim: 128
-  multi_task: true
+  multi_task: false
   base_proj_hidden_dim: 256
   base_proj_dropout: 0.2
   base_proj_output_dim: 128
@@ -59,7 +56,7 @@ training:
 # note: logs are saved to log_dir/experiment_name/experiment_version/
 logging:
   log_dir: "/home/systewar/CLIMuR/train_logs"
-  experiment_name: "multi_task/HarmonicCNN/frozen/all_losses"
+  experiment_name: "single_task/HarmonicCNN/frozen/all_losses"
   experiment_version: null     # automatic versioning if set to null (recommended)
   log_every_n_steps: 20     # how often to log
 ...

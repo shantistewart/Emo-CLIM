@@ -9,6 +9,10 @@ from torch import Tensor
 SHORTCHUNK_INPUT_LENGTH     = 59049         # ~3.69 seconds
 HARMONIC_CNN_INPUT_LENGTH   = 80000         # 5.0 seconds
 CLAP_INPUT_LENGTH           = 480000        # 10.0 seconds
+# output embedding dimensions for each model:
+SHORTCHUNK_EMBED_DIM = 512     # assumes last_layer = "layer7" or later
+HARMONIC_CNN_EMBED_DIM = 256     # assumes last_layer = "layer5" or later
+CLAP_EMBED_DIM = 512
 
 
 class ShortChunkCNNEmbeddings(nn.Module):

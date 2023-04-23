@@ -5,11 +5,10 @@ import os
 import torch
 import torchinfo
 import clip
-from climur.models.image_backbones import CLIPModel
+from climur.models.image_backbones import CLIPModel, CLIP_EMBED_DIM
 
 
 # constants:
-CLIP_EMBED_SIZE = 512
 IMAGE_CHANNELS = 3
 IMAGE_HEIGHT, IMAGE_WIDTH = 224, 224
 
@@ -43,7 +42,7 @@ if __name__ == "__main__":
     print("Input size: {}".format(tuple(x.size())))
     output = wrap_model(x)
     print("Output size: {}".format(tuple(output.size())))
-    assert tuple(output.size()) == (batch_size, CLIP_EMBED_SIZE), "Error with shape of forward pass output."
+    assert tuple(output.size()) == (batch_size, CLIP_EMBED_DIM), "Error with shape of forward pass output."
 
     # create model summary, if selected:
     if model_summaries:

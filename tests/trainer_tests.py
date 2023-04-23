@@ -11,9 +11,9 @@ import clip
 from climur.dataloaders.imac_images import IMACImages
 from climur.dataloaders.audioset import AudioSetMood
 from climur.dataloaders.multimodal import Multimodal
-from climur.models.image_backbones import CLIPModel
+from climur.models.image_backbones import CLIPModel, CLIP_EMBED_DIM
 from climur.models.audio_model_components import ShortChunkCNN_Res, HarmonicCNN
-from climur.models.audio_backbones import ShortChunkCNNEmbeddings, HarmonicCNNEmbeddings, SHORTCHUNK_INPUT_LENGTH, HARMONIC_CNN_INPUT_LENGTH
+from climur.models.audio_backbones import ShortChunkCNNEmbeddings, HarmonicCNNEmbeddings, SHORTCHUNK_INPUT_LENGTH, HARMONIC_CNN_INPUT_LENGTH, SHORTCHUNK_EMBED_DIM, HARMONIC_CNN_EMBED_DIM
 from climur.trainers.image2music import Image2Music
 
 
@@ -26,7 +26,7 @@ AUDIOSET_METADATA_FILE = "new_split_metadata_files/metadata_train.csv"
 # image constants:
 IMAGE_CHANNELS = 3
 IMAGE_HEIGHT, IMAGE_WIDTH = 224, 224
-IMAGE_EMBED_DIM = 512
+IMAGE_EMBED_DIM = CLIP_EMBED_DIM
 # audio constants:
 SAMPLE_RATE = 16000
 
@@ -36,18 +36,18 @@ device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("
 audio_backbone_name = "HarmonicCNN"     # or "ShortChunk"
 if audio_backbone_name == "ShortChunk":
     audio_clip_length = SHORTCHUNK_INPUT_LENGTH     # ~3.69 seconds
-    audio_embed_dim = 512
+    audio_embed_dim = SHORTCHUNK_EMBED_DIM
     pretrained_audio_backbone_path = "/proj/systewar/pretrained_models/music_tagging/msd/short_chunk_resnet/best_model.pth"
 elif audio_backbone_name == "HarmonicCNN":
     audio_clip_length = HARMONIC_CNN_INPUT_LENGTH     # 5.0 seconds
-    audio_embed_dim = 256
+    audio_embed_dim = HARMONIC_CNN_EMBED_DIM
     pretrained_audio_backbone_path = "/proj/systewar/pretrained_models/music_tagging/msd/harmonic_cnn/best_model.pth"
 last_layer_embed = "layer7"
 pool_type = "max"
 
 # for full model:
 output_embed_dim = 128
-multi_task = True
+multi_task = False
 base_proj_hidden_dim = 256
 base_proj_dropout = 0.2
 base_proj_output_dim = 128
@@ -304,7 +304,7 @@ if __name__ == "__main__":
         audio_embeds = full_model.compute_audio_embeds(audios)
         if verbose:
             print()
-            print("Image embeddings size: {}".format(tuple(audio_embeds.size())))
+            print("Audio embeddings size: {}".format(tuple(audio_embeds.size())))
         assert tuple(audio_embeds.size()) == (batch_size, output_embed_dim), "Error with shape of audio embeddings."
 
 
