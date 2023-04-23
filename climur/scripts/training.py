@@ -1,6 +1,7 @@
 """Training script for image-music supervised contrastive learning."""
 
 
+import os
 import argparse
 import pytorch_lightning as pl
 from pytorch_lightning import Trainer
@@ -263,10 +264,38 @@ if __name__ == "__main__":
         device=device,
     )
 
+    # automatically set up experiment name if not provided: experiment_name = "task_mode/audio_backbone_model_name/audio_backbone_mode/loss_weights_mode"
+    if logging_configs["experiment_name"] is None:
+        if full_model_configs["multi_task"]:
+            task_mode = "multi_task"
+        else:
+            task_mode = "single_task"
+        
+        if full_model_configs["freeze_audio_backbone"]:
+            audio_backbone_mode = "frozen"
+        else:
+            audio_backbone_mode = "unfrozen"
+        
+        if training_configs["loss_weights"]["image2image"] > 0.0 and training_configs["loss_weights"]["audio2audio"] > 0.0:
+            if training_configs["loss_weights"]["image2audio"] > 0.0 and training_configs["loss_weights"]["audio2image"] > 0.0:
+                loss_weights_mode = "all_losses"
+            else:
+                loss_weights_mode = "intra_losses_only"
+        elif training_configs["loss_weights"]["image2audio"] > 0.0 and training_configs["loss_weights"]["audio2image"] > 0.0:
+            loss_weights_mode = "cross_losses_only"
+        else:
+            raise ValueError("All loss weights can't be 0.")
+        
+        experiment_name = os.path.join(task_mode, audio_backbone_configs["model_name"], audio_backbone_mode, loss_weights_mode)
+    
+    # else use provided experiment name:
+    else:
+        experiment_name = logging_configs["experiment_name"]
+    
     # create logger (logs are saved to /save_dir/name/version/):
     logger = TensorBoardLogger(
         save_dir=logging_configs["log_dir"],
-        name=logging_configs["experiment_name"],
+        name=experiment_name,
         version=logging_configs["experiment_version"],
     )
 

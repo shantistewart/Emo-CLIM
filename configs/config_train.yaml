@@ -25,8 +25,8 @@ audio_backbone:
 
 # full model options:
 full_model:
-  output_embed_dim: 128
   multi_task: false
+  output_embed_dim: 128
   base_proj_hidden_dim: 256
   base_proj_dropout: 0.2
   base_proj_output_dim: 128
@@ -55,8 +55,8 @@ training:
 # logging options:
 # note: logs are saved to log_dir/experiment_name/experiment_version/
 logging:
-  log_dir: "/home/systewar/CLIMuR/train_logs"
-  experiment_name: "single_task/HarmonicCNN/frozen/all_losses"
+  log_dir: "train_logs"
+  experiment_name: null     # automatically creates an experiment name if set to null (recommended)
   experiment_version: null     # automatic versioning if set to null (recommended)
   log_every_n_steps: 20     # how often to log
 ...
