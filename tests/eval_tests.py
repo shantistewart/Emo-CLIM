@@ -3,16 +3,23 @@
 
 import argparse
 import torch
-import numpy as np
 import clip
 
 from climur.utils.eval import get_image_embeddings, get_audio_embeddings
 from climur.utils.retrieval import compute_retrieval_metrics
 from climur.dataloaders.imac_images import IMACImages
 from climur.dataloaders.audioset import AudioSetMood
-from climur.models.image_backbones import CLIPModel
+from climur.models.image_backbones import CLIPModel, CLIP_EMBED_DIM
 from climur.models.audio_model_components import ShortChunkCNN_Res, HarmonicCNN
-from climur.models.audio_backbones import ShortChunkCNNEmbeddings, HarmonicCNNEmbeddings, SHORTCHUNK_INPUT_LENGTH, HARMONIC_CNN_INPUT_LENGTH
+from climur.models.audio_backbones import (
+    ShortChunkCNNEmbeddings,
+    HarmonicCNNEmbeddings,
+    SHORTCHUNK_INPUT_LENGTH,
+    HARMONIC_CNN_INPUT_LENGTH,
+    CLAP_INPUT_LENGTH,
+    SHORTCHUNK_EMBED_DIM,
+    HARMONIC_CNN_EMBED_DIM
+)
 from climur.trainers.image2music import Image2Music
 from climur.utils.misc import load_configs
 
@@ -53,7 +60,6 @@ if __name__ == "__main__":
     configs = load_configs(args.config_file)
     # unpack configs:
     dataset_configs = configs["dataset"]
-    image_backbone_configs = configs["image_backbone"]
     audio_backbone_configs = configs["audio_backbone"]
     full_model_configs = configs["full_model"]
     eval_configs = configs["eval"]
@@ -75,11 +81,14 @@ if __name__ == "__main__":
     # create CLIP wrapper model:
     image_backbone = CLIPModel(orig_clip_model)
     image_backbone.to(device)
+    # set output embedding dimension:
+    image_embed_dim = CLIP_EMBED_DIM
 
     # set up audio backbone model:
     if audio_backbone_configs["model_name"] == "ShortChunk":
-        # set audio input length:
+        # set audio input length and output embedding dimension:
         audio_clip_length = SHORTCHUNK_INPUT_LENGTH
+        audio_embed_dim = SHORTCHUNK_EMBED_DIM
         # create full Short-Chunk CNN ResNet model:
         full_audio_backbone = ShortChunkCNN_Res()
         # create wrapper model:
@@ -92,8 +101,9 @@ if __name__ == "__main__":
         )
     
     elif audio_backbone_configs["model_name"] == "HarmonicCNN":
-        # set audio input length:
+        # set audio input length and output embedding dimension:
         audio_clip_length = HARMONIC_CNN_INPUT_LENGTH
+        audio_embed_dim = HARMONIC_CNN_EMBED_DIM
         # create full Harmonic CNN model:
         full_audio_backbone = HarmonicCNN()
         # create wrapper model:
@@ -158,8 +168,8 @@ if __name__ == "__main__":
         image_backbone=image_backbone,
         audio_backbone=audio_backbone,
         output_embed_dim=full_model_configs["output_embed_dim"],
-        image_embed_dim=image_backbone_configs["embed_dim"],
-        audio_embed_dim=audio_backbone_configs["embed_dim"],
+        image_embed_dim=image_embed_dim,
+        audio_embed_dim=audio_embed_dim,
 
         multi_task = full_model_configs["multi_task"],
         base_proj_hidden_dim = full_model_configs["base_proj_hidden_dim"],

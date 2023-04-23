@@ -11,13 +11,9 @@ dataset:
   audio_dataset_dir: "/proj/systewar/datasets/audioset_music_mood"
   sample_rate: 16000
 
-# image backbone options:
-image_backbone:
-  embed_dim: 512
 # audio backbone options:
 audio_backbone:
   model_name: "HarmonicCNN"     # or "ShortChunk"
-  embed_dim: 256     # or 512
   last_layer_embed: "layer7"
   pool_type: "max"
 
