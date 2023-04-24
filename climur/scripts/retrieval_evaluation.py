@@ -6,7 +6,7 @@ import argparse
 import torch
 import json
 import clip
-# import laion_clap
+import laion_clap
 
 from climur.utils.eval import get_image_embeddings, get_audio_embeddings
 from climur.utils.retrieval import compute_retrieval_metrics
@@ -266,10 +266,28 @@ if __name__ == "__main__":
     if verbose:
         print("\n\n\nRunning retrieval evaluations...\n")
     
+    # automatically set results directory if not provided: results_dir = "results_subset/task_mode/audio_backbone_model_name/audio_backbone_mode/loss_weights_mode"
+    if eval_configs["results_dir"] is None:
+        if full_model_configs["multi_task"]:
+            task_mode = "multi_task"
+        else:
+            task_mode = "single_task"
+        
+        if full_model_configs["freeze_audio_backbone"]:
+            audio_backbone_mode = "frozen"
+        else:
+            audio_backbone_mode = "unfrozen"
+        
+        results_dir = os.path.join("results_{}".format(dataset_configs["subset"]), task_mode, audio_backbone_configs["model_name"], audio_backbone_mode, eval_configs["loss_weights_mode"])
+    
+    # else use provided results directory:
+    else:
+        results_dir = eval_configs["results_dir"]
+    
     # create directories for saving results:
-    os.makedirs(eval_configs["results_dir"], exist_ok=False)
-    os.makedirs(os.path.join(eval_configs["results_dir"], "macro"), exist_ok=False)
-    os.makedirs(os.path.join(eval_configs["results_dir"], "per_class"), exist_ok=False)
+    os.makedirs(results_dir, exist_ok=False)
+    os.makedirs(os.path.join(results_dir, "macro"), exist_ok=False)
+    os.makedirs(os.path.join(results_dir, "per_class"), exist_ok=False)
 
     # map image dataset emotion tags to audio dataset emotion tags:
     image_labels = [IMAGE2AUDIO_TAG_MAP[tag] for tag in image_tags]
@@ -291,9 +309,9 @@ if __name__ == "__main__":
         mode="cross-modal"
     )
     # save to json files:
-    with open(os.path.join(eval_configs["results_dir"], "macro", "image2music_retrieval.json"), "w") as json_file:
+    with open(os.path.join(results_dir, "macro", "image2music_retrieval.json"), "w") as json_file:
         json.dump(macro_metrics, json_file, indent=3)
-    with open(os.path.join(eval_configs["results_dir"], "per_class", "image2music_retrieval.json"), "w") as json_file:
+    with open(os.path.join(results_dir, "per_class", "image2music_retrieval.json"), "w") as json_file:
         json.dump(metrics_per_class, json_file, indent=3)
     
     # run music-to-image retrieval:
@@ -310,9 +328,9 @@ if __name__ == "__main__":
         mode="cross-modal"
     )
     # save to json files:
-    with open(os.path.join(eval_configs["results_dir"], "macro", "music2image_retrieval.json"), "w") as json_file:
+    with open(os.path.join(results_dir, "macro", "music2image_retrieval.json"), "w") as json_file:
         json.dump(macro_metrics, json_file, indent=3)
-    with open(os.path.join(eval_configs["results_dir"], "per_class", "music2image_retrieval.json"), "w") as json_file:
+    with open(os.path.join(results_dir, "per_class", "music2image_retrieval.json"), "w") as json_file:
         json.dump(metrics_per_class, json_file, indent=3)
 
 
@@ -342,9 +360,9 @@ if __name__ == "__main__":
             mode="intra-modal"
         )
     # save to json files:
-    with open(os.path.join(eval_configs["results_dir"], "macro", "image2image_retrieval.json"), "w") as json_file:
+    with open(os.path.join(results_dir, "macro", "image2image_retrieval.json"), "w") as json_file:
         json.dump(macro_metrics, json_file, indent=3)
-    with open(os.path.join(eval_configs["results_dir"], "per_class", "image2image_retrieval.json"), "w") as json_file:
+    with open(os.path.join(results_dir, "per_class", "image2image_retrieval.json"), "w") as json_file:
         json.dump(metrics_per_class, json_file, indent=3)
     
     # run music-to-music retrieval:
@@ -373,9 +391,9 @@ if __name__ == "__main__":
             mode="intra-modal"
         )
     # save to json files:
-    with open(os.path.join(eval_configs["results_dir"], "macro", "music2music_retrieval.json"), "w") as json_file:
+    with open(os.path.join(results_dir, "macro", "music2music_retrieval.json"), "w") as json_file:
         json.dump(macro_metrics, json_file, indent=3)
-    with open(os.path.join(eval_configs["results_dir"], "per_class", "music2music_retrieval.json"), "w") as json_file:
+    with open(os.path.join(results_dir, "per_class", "music2music_retrieval.json"), "w") as json_file:
         json.dump(metrics_per_class, json_file, indent=3)
 
 

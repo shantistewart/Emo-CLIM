@@ -20,8 +20,8 @@ audio_backbone:
 # full model options:
 full_model:
   checkpoint_path: "/home/systewar/CLIMuR/train_logs/single_task/HarmonicCNN/frozen/all_losses/version_0/checkpoints/epoch=20-step=2100.ckpt"
-  output_embed_dim: 128
   multi_task: false
+  output_embed_dim: 128
   base_proj_hidden_dim: 256
   base_proj_dropout: 0.2     # TODO: Probably can remove this.
   base_proj_output_dim: 128
@@ -33,7 +33,8 @@ full_model:
 
 # evaluation options:
 eval:
-  results_dir: "results_val/single_task/HarmonicCNN/frozen/all_losses"
+  results_dir: null     # automatically sets results directory if set to null (recommended)
+  loss_weights_mode: "all_losses"     # necessary for automatic results directory naming
   overlap_ratio: 0.75
   retrieval_metrics: ["precision", "MRR", "MAP"]
   k_vals: [1, 5, 10]
