@@ -8,20 +8,7 @@ import torchaudio
 import pandas as pd
 import numpy as np
 from typing import Dict, Tuple
-
-
-# expected sampling rate:
-SAMPLE_RATE = 16000
-# dictionary mapping original emotion tag names to shorter names:
-EMOTION_TAGS_MAP = {
-    "Happy music": "happy",
-    "Funny music": "funny",
-    "Sad music": "sad",
-    "Tender music": "tender",
-    "Exciting music": "exciting",
-    "Angry music": "angry",
-    "Scary music": "scary"
-}
+from climur.utils.constants import SAMPLE_RATE, AUDIOSET_EMOTION_TAGS_MAP
 
 
 class AudioSetMood(Dataset):
@@ -39,7 +26,7 @@ class AudioSetMood(Dataset):
         audio_model (str): Name of audio backbone model being used (only used for CLAP).
     """
 
-    def __init__(self, root: str, metadata_file_name: str, clip_length_samples: int, sample_rate: int = SAMPLE_RATE, eval: bool = False, overlap_ratio: float = 0.0, emotion_tags_map: Dict = EMOTION_TAGS_MAP, audio_dir_name: str = "audio_files", audio_model: str = "ShortChunk") -> None:
+    def __init__(self, root: str, metadata_file_name: str, clip_length_samples: int, sample_rate: int = SAMPLE_RATE, eval: bool = False, overlap_ratio: float = 0.0, emotion_tags_map: Dict = AUDIOSET_EMOTION_TAGS_MAP, audio_dir_name: str = "audio_files", audio_model: str = "ShortChunk") -> None:
         """Initialization.
 
         Args:

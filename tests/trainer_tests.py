@@ -11,10 +11,17 @@ import clip
 from climur.dataloaders.imac_images import IMACImages
 from climur.dataloaders.audioset import AudioSetMood
 from climur.dataloaders.multimodal import Multimodal
-from climur.models.image_backbones import CLIPModel, CLIP_EMBED_DIM
+from climur.models.image_backbones import CLIPModel
 from climur.models.audio_model_components import ShortChunkCNN_Res, HarmonicCNN
-from climur.models.audio_backbones import ShortChunkCNNEmbeddings, HarmonicCNNEmbeddings, SHORTCHUNK_INPUT_LENGTH, HARMONIC_CNN_INPUT_LENGTH, SHORTCHUNK_EMBED_DIM, HARMONIC_CNN_EMBED_DIM
+from climur.models.audio_backbones import ShortChunkCNNEmbeddings, HarmonicCNNEmbeddings
 from climur.trainers.image2music import Image2Music
+from climur.utils.constants import (
+    SHORTCHUNK_INPUT_LENGTH,
+    HARMONIC_CNN_INPUT_LENGTH,
+    CLIP_EMBED_DIM,
+    SHORTCHUNK_EMBED_DIM,
+    HARMONIC_CNN_EMBED_DIM
+)
 
 
 # dataset paths:

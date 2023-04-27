@@ -5,8 +5,9 @@ import os
 import torch
 import torchinfo
 import warnings
-from climur.models.audio_backbones import ShortChunkCNNEmbeddings, SHORTCHUNK_INPUT_LENGTH
+from climur.models.audio_backbones import ShortChunkCNNEmbeddings
 from climur.models.audio_model_components import ShortChunkCNN_Res
+from climur.utils.constants import SHORTCHUNK_INPUT_LENGTH
 
 
 # constants:

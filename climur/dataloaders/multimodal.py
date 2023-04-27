@@ -5,17 +5,7 @@ from torch.utils.data import Dataset
 from torch import Tensor
 import random
 from typing import Union, Dict
-
-
-# default manual mapping from image dataset emotion tags to audio dataset emotion tags:
-IMAGE2AUDIO_TAG_MAP = {
-    "excitement": "exciting",
-    "contentment": "happy",
-    "amusement": "funny",     # TODO: not totally sure about this one (amusement may be closer to "entertaining" than "funny")
-    "anger": "angry",
-    "fear": "scary",
-    "sadness": "sad"
-}
+from climur.utils.constants import IMAGE2AUDIO_TAG_MAP
 
 
 class Multimodal(Dataset):

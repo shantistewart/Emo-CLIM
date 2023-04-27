@@ -5,8 +5,9 @@ import os
 import torch
 import torchinfo
 import warnings
-from climur.models.audio_backbones import HarmonicCNNEmbeddings, HARMONIC_CNN_INPUT_LENGTH
+from climur.models.audio_backbones import HarmonicCNNEmbeddings
 from climur.models.audio_model_components import HarmonicCNN
+from climur.utils.constants import HARMONIC_CNN_INPUT_LENGTH
 
 
 # constants:

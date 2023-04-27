@@ -5,7 +5,8 @@ import os
 import torch
 import torchinfo
 import clip
-from climur.models.image_backbones import CLIPModel, CLIP_EMBED_DIM
+from climur.models.image_backbones import CLIPModel
+from climur.utils.constants import CLIP_EMBED_DIM
 
 
 # constants:

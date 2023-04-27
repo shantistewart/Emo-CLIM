@@ -10,26 +10,28 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 import torch
 from torch.utils.data import DataLoader
 import clip
-import laion_clap
+try:
+    import laion_clap
+except:
+    pass
 
 from climur.dataloaders.imac_images import IMACImages
 from climur.dataloaders.audioset import AudioSetMood
 from climur.dataloaders.multimodal import Multimodal
-from climur.models.image_backbones import CLIPModel, CLIP_EMBED_DIM
+from climur.models.image_backbones import CLIPModel
 from climur.models.audio_model_components import ShortChunkCNN_Res, HarmonicCNN
-from climur.models.audio_backbones import (
-    ShortChunkCNNEmbeddings,
-    HarmonicCNNEmbeddings,
-    CLAPEmbeddings,
+from climur.models.audio_backbones import ShortChunkCNNEmbeddings, HarmonicCNNEmbeddings, CLAPEmbeddings
+from climur.trainers.image2music import Image2Music
+from climur.utils.misc import load_configs
+from climur.utils.constants import (
     SHORTCHUNK_INPUT_LENGTH,
     HARMONIC_CNN_INPUT_LENGTH,
     CLAP_INPUT_LENGTH,
+    CLIP_EMBED_DIM,
     SHORTCHUNK_EMBED_DIM,
     HARMONIC_CNN_EMBED_DIM,
     CLAP_EMBED_DIM
 )
-from climur.trainers.image2music import Image2Music
-from climur.utils.misc import load_configs
 
 
 # default config file:

@@ -5,10 +5,6 @@ import torch.nn as nn
 from torch import Tensor
 
 
-# output embedding dimension:
-CLIP_EMBED_DIM = 512
-
-
 class CLIPModel(nn.Module):
     """Wrapper class for CLIP model.
 
