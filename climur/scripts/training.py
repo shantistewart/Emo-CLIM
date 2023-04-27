@@ -9,6 +9,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
 import torch
 from torch.utils.data import DataLoader
+from copy import deepcopy
 import clip
 try:
     import laion_clap
@@ -20,17 +21,22 @@ from climur.dataloaders.audioset import AudioSetMood
 from climur.dataloaders.multimodal import Multimodal
 from climur.models.image_backbones import CLIPModel
 from climur.models.audio_model_components import ShortChunkCNN_Res, HarmonicCNN
-from climur.models.audio_backbones import ShortChunkCNNEmbeddings, HarmonicCNNEmbeddings, CLAPEmbeddings
+from climur.models.vcmr_trainer import VCMR
+from climur.models.audio_backbones import ShortChunkCNNEmbeddings, HarmonicCNNEmbeddings, SampleCNNEmbeddings, CLAPEmbeddings
 from climur.trainers.image2music import Image2Music
 from climur.utils.misc import load_configs
 from climur.utils.constants import (
     SHORTCHUNK_INPUT_LENGTH,
     HARMONIC_CNN_INPUT_LENGTH,
+    SAMPLE_CNN_INPUT_LENGTH,
     CLAP_INPUT_LENGTH,
     CLIP_EMBED_DIM,
     SHORTCHUNK_EMBED_DIM,
     HARMONIC_CNN_EMBED_DIM,
-    CLAP_EMBED_DIM
+    SAMPLE_CNN_EMBED_DIM,
+    CLAP_EMBED_DIM,
+    SAMPLE_CNN_DEFAULT_PARAMS,
+    VCMR_DEFAULT_PARAMS
 )
 
 
@@ -128,6 +134,24 @@ if __name__ == "__main__":
             last_layer=audio_backbone_configs["last_layer_embed"],
             pool_type=audio_backbone_configs["pool_type"],
         )
+    
+    elif audio_backbone_configs["model_name"] == "SampleCNN":
+        # set audio input length and output embedding dimension:
+        audio_clip_length = SAMPLE_CNN_INPUT_LENGTH
+        audio_embed_dim = SAMPLE_CNN_EMBED_DIM
+        # create (empty) SampleCNNEmbeddings model:
+        sample_cnn = SampleCNNEmbeddings(
+            params=SAMPLE_CNN_DEFAULT_PARAMS
+        )
+        # load pretrained VCMR model:
+        vcmr_model = VCMR.load_from_checkpoint(
+            audio_backbone_configs["pretrained_model_paths"][audio_backbone_configs["model_name"]],
+            map_location=torch.device("cpu"),
+            encoder=sample_cnn,
+            video_params=VCMR_DEFAULT_PARAMS
+        )
+        # extract SampleCNNEmbeddings component:
+        audio_backbone = deepcopy(vcmr_model.encoder)
     
     elif audio_backbone_configs["model_name"] == "CLAP":
         # set audio input length and output embedding dimension:

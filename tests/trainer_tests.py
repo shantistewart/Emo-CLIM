@@ -6,6 +6,7 @@ import torch
 from torch.utils.data import DataLoader
 from torch import Tensor
 import torchinfo
+from copy import deepcopy
 import clip
 
 from climur.dataloaders.imac_images import IMACImages
@@ -13,14 +14,19 @@ from climur.dataloaders.audioset import AudioSetMood
 from climur.dataloaders.multimodal import Multimodal
 from climur.models.image_backbones import CLIPModel
 from climur.models.audio_model_components import ShortChunkCNN_Res, HarmonicCNN
-from climur.models.audio_backbones import ShortChunkCNNEmbeddings, HarmonicCNNEmbeddings
+from climur.models.vcmr_trainer import VCMR
+from climur.models.audio_backbones import ShortChunkCNNEmbeddings, HarmonicCNNEmbeddings, SampleCNNEmbeddings
 from climur.trainers.image2music import Image2Music
 from climur.utils.constants import (
     SHORTCHUNK_INPUT_LENGTH,
     HARMONIC_CNN_INPUT_LENGTH,
+    SAMPLE_CNN_INPUT_LENGTH,
     CLIP_EMBED_DIM,
     SHORTCHUNK_EMBED_DIM,
-    HARMONIC_CNN_EMBED_DIM
+    HARMONIC_CNN_EMBED_DIM,
+    SAMPLE_CNN_EMBED_DIM,
+    SAMPLE_CNN_DEFAULT_PARAMS,
+    VCMR_DEFAULT_PARAMS
 )
 
 
@@ -40,15 +46,19 @@ SAMPLE_RATE = 16000
 # script options:
 device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("cpu")
 # for audio backbone model:
-audio_backbone_name = "HarmonicCNN"     # or "ShortChunk"
+audio_backbone_name = "HarmonicCNN"     # or "ShortChunk" or "SampleCNN"
 if audio_backbone_name == "ShortChunk":
+    pretrained_audio_backbone_path = "/proj/systewar/pretrained_models/music_tagging/msd/short_chunk_resnet/best_model.pth"
     audio_clip_length = SHORTCHUNK_INPUT_LENGTH     # ~3.69 seconds
     audio_embed_dim = SHORTCHUNK_EMBED_DIM
-    pretrained_audio_backbone_path = "/proj/systewar/pretrained_models/music_tagging/msd/short_chunk_resnet/best_model.pth"
 elif audio_backbone_name == "HarmonicCNN":
+    pretrained_audio_backbone_path = "/proj/systewar/pretrained_models/music_tagging/msd/harmonic_cnn/best_model.pth"
     audio_clip_length = HARMONIC_CNN_INPUT_LENGTH     # 5.0 seconds
     audio_embed_dim = HARMONIC_CNN_EMBED_DIM
-    pretrained_audio_backbone_path = "/proj/systewar/pretrained_models/music_tagging/msd/harmonic_cnn/best_model.pth"
+elif audio_backbone_name == "SampleCNN":
+    pretrained_audio_backbone_path = "/proj/systewar/pretrained_models/VCMR/multimodal/multimodal_model_1.ckpt"
+    audio_clip_length = SAMPLE_CNN_INPUT_LENGTH     # ~6.15 seconds
+    audio_embed_dim = SAMPLE_CNN_EMBED_DIM
 last_layer_embed = "layer7"
 pool_type = "max"
 
@@ -119,6 +129,21 @@ if __name__ == "__main__":
             last_layer=last_layer_embed,
             pool_type=pool_type
         )
+    
+    elif audio_backbone_name == "SampleCNN":
+        # create (empty) SampleCNNEmbeddings model:
+        sample_cnn = SampleCNNEmbeddings(
+            params=SAMPLE_CNN_DEFAULT_PARAMS
+        )
+        # load pretrained VCMR model:
+        vcmr_model = VCMR.load_from_checkpoint(
+            pretrained_audio_backbone_path,
+            map_location=torch.device("cpu"),
+            encoder=sample_cnn,
+            video_params=VCMR_DEFAULT_PARAMS
+        )
+        # extract SampleCNNEmbeddings component:
+        audio_backbone = deepcopy(vcmr_model.encoder)
     
     else:
         raise ValueError("{} model not supported".format(audio_backbone_name))

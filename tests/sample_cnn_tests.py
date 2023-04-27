@@ -47,7 +47,6 @@ if __name__ == "__main__":
     )
     # extract SampleCNNEmbeddings component:
     embed_model = deepcopy(full_model.encoder)
-    embed_model.requires_grad_(True)     # make sure all weights are unfrozen
     embed_model.to(device)
 
 

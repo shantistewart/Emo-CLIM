@@ -15,13 +15,14 @@ dataset:
 
 # audio backbone options:
 audio_backbone:
-  model_name: "HarmonicCNN"     # or "ShortChunk"
+  model_name: "HarmonicCNN"      # or "ShortChunk" or "SampleCNN" or "CLAP"
   pretrained_model_paths:
     HarmonicCNN: "/proj/systewar/pretrained_models/music_tagging/msd/harmonic_cnn/best_model.pth"
     ShortChunk: "/proj/systewar/pretrained_models/music_tagging/msd/short_chunk_resnet/best_model.pth"
+    SampleCNN: "/proj/systewar/pretrained_models/VCMR/multimodal/multimodal_model_1.ckpt"
     CLAP: "/project/shrikann_35/tiantiaf/music/music/pretrained_models/music_speech_epoch_15_esc_89.25.pt"
-  last_layer_embed: "layer7"
-  pool_type: "max"
+  last_layer_embed: "layer7"     # only used for "ShortChunk" and "HarmonicCNN"
+  pool_type: "max"               # # only used for "ShortChunk" and "HarmonicCNN"
 
 # full model options:
 full_model:
