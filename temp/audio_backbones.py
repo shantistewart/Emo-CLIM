@@ -4,7 +4,19 @@
 import torch.nn as nn
 from torch import Tensor
 import numpy as np
-from typing import Dict
+from typing import List, Dict
+
+
+# audio input lengths (in samples) each model:
+SHORTCHUNK_INPUT_LENGTH     = 59049         # ~3.69 seconds
+HARMONIC_CNN_INPUT_LENGTH   = 80000         # 5.0 seconds
+SAMPLE_CNN_INPUT_LENGTH     = 98415         # ~6.15 seconds
+CLAP_INPUT_LENGTH           = 480000        # 10.0 seconds
+# output embedding dimensions for each model:
+SHORTCHUNK_EMBED_DIM = 512     # assumes last_layer = "layer7" or later
+HARMONIC_CNN_EMBED_DIM = 256     # assumes last_layer = "layer5" or later
+SAMPLE_CNN_EMBED_DIM = 512
+CLAP_EMBED_DIM = 512
 
 
 class ShortChunkCNNEmbeddings(nn.Module):
@@ -201,39 +213,28 @@ class SampleCNNEmbeddings(nn.Module):
         all_blocks (nn.Sequential: nn.Sequential object for all blocks.
     """
 
-    def __init__(self, params: Dict) -> None:
+    def __init__(self, n_blocks: int, n_channels: List, output_size: int, conv_kernel_size: int, pool_size: int, activation: str = "relu", first_block_params: Dict = None, input_size: int = None) -> None:
         """Initialization.
 
         Args:
-            params (dict): Dictionary of parameters, with keys/values:
-                "n_blocks" (int): Number of middle convolutional blocks (equal to n_total_blocks - 2).
-                "n_channels" (list): List of number of (output) channels for middle blocks.
-                    length: n_blocks
-                "output_size" (int): Number of output channels for last block.
-                "conv_kernel_size" (int): Size of convolutional kernel for middle blocks.
-                    Convolution stride is equal to 1 for middle blocks.
-                "pool_size" (int): Size of pooling kernel and pooling stride for middle blocks.
-                    Kernel size is equal to stride to ensure even division of input size.
-                "activation" (str): Type of activation to use for all blocks ("relu" or "leaky_relu").
-                "first_block_params" (dict): Dictionary describing first block, with keys/values:
-                    "out_channels" (int): Number of output channels.
-                    "conv_size" (int): Size of convolutional kernel and convolution stride (kernel size is equal to stride to ensure even division of input size).
-                "input_size" (int): Size (length) of input.
+            n_blocks (int): Number of middle convolutional blocks (equal to n_total_blocks - 2).
+            n_channels (list): List of number of (output) channels for middle blocks.
+                length: n_blocks
+            output_size (int): Number of output channels for last block.
+            conv_kernel_size (int): Size of convolutional kernel for middle blocks.
+                Convolution stride is equal to 1 for middle blocks.
+            pool_size (int): Size of pooling kernel and pooling stride for middle blocks.
+                Kernel size is equal to stride to ensure even division of input size.
+            activation (str): Type of activation to use for all blocks ("relu" or "leaky_relu").
+            first_block_params (dict): Dictionary describing first block, with keys/values:
+                out_channels (int): Number of output channels.
+                conv_size (int): Size of convolutional kernel and convolution stride (kernel size is equal to stride to ensure even division of input size).
+            input_size (int): Size (length) of input.
         
         Returns: None
         """
 
         super(SampleCNNEmbeddings, self).__init__()
-
-        # unpack parameters dictionary:
-        n_blocks = params["n_blocks"]
-        n_channels = params["n_channels"]
-        output_size = params["output_size"]
-        conv_kernel_size = params["conv_kernel_size"]
-        pool_size = params["pool_size"]
-        activation = params["activation"]
-        first_block_params = params.get("first_block_params")
-        input_size = params.get("input_size")
 
         # validate parameters:
         assert len(n_channels) == n_blocks, "Length of n_channels doesn't match n_blocks."
@@ -321,7 +322,6 @@ class SampleCNNEmbeddings(nn.Module):
         """
 
         # forward pass through all blocks:
-        x = x.unsqueeze(dim=1)
         output = self.all_blocks(x)
         # remove temporal dimension (since it is size 1):
         output = output.squeeze(dim=-1)
