@@ -17,29 +17,23 @@ from climur.dataloaders.imac_images import IMACImages
 from climur.dataloaders.audioset import AudioSetMood
 from climur.models.image_backbones import CLIPModel
 from climur.models.audio_model_components import ShortChunkCNN_Res, HarmonicCNN
-from climur.models.audio_backbones import ShortChunkCNNEmbeddings, HarmonicCNNEmbeddings, CLAPEmbeddings
+from climur.models.audio_backbones import ShortChunkCNNEmbeddings, HarmonicCNNEmbeddings, SampleCNNEmbeddings, CLAPEmbeddings
 from climur.trainers.image2music import Image2Music
 from climur.utils.misc import load_configs
 from climur.utils.constants import (
+    IMAGE2AUDIO_TAG_MAP,
     SHORTCHUNK_INPUT_LENGTH,
     HARMONIC_CNN_INPUT_LENGTH,
+    SAMPLE_CNN_INPUT_LENGTH,
     CLAP_INPUT_LENGTH,
     CLIP_EMBED_DIM,
     SHORTCHUNK_EMBED_DIM,
     HARMONIC_CNN_EMBED_DIM,
-    CLAP_EMBED_DIM
+    SAMPLE_CNN_EMBED_DIM,
+    CLAP_EMBED_DIM,
+    SAMPLE_CNN_DEFAULT_PARAMS
 )
 
-
-# default manual mapping from image dataset emotion tags to audio dataset emotion tags:
-IMAGE2AUDIO_TAG_MAP = {
-    "excitement": "exciting",
-    "contentment": "happy",
-    "amusement": "funny",
-    "anger": "angry",
-    "fear": "scary",
-    "sadness": "sad"
-}
 
 # default config file:
 CONFIG_FILE = "configs/config_retrieval_eval.yaml"
@@ -120,6 +114,15 @@ if __name__ == "__main__":
             sample_input=sample_audio_input,
             last_layer=audio_backbone_configs["last_layer_embed"],
             pool_type=audio_backbone_configs["pool_type"],
+        )
+    
+    elif audio_backbone_configs["model_name"] == "SampleCNN":
+        # set audio input length and output embedding dimension:
+        audio_clip_length = SAMPLE_CNN_INPUT_LENGTH
+        audio_embed_dim = SAMPLE_CNN_EMBED_DIM
+        # create (empty) SampleCNNEmbeddings model:
+        audio_backbone = SampleCNNEmbeddings(
+            params=SAMPLE_CNN_DEFAULT_PARAMS
         )
     
     elif audio_backbone_configs["model_name"] == "CLAP":

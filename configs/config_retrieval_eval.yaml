@@ -13,7 +13,7 @@ dataset:
 
 # audio backbone options:
 audio_backbone:
-  model_name: "HarmonicCNN"     # or "ShortChunk"
+  model_name: "HarmonicCNN"      # or "ShortChunk" or "SampleCNN" or "CLAP"
   last_layer_embed: "layer7"
   pool_type: "max"
 
