@@ -1,9 +1,11 @@
 """Utility functions for evaluation."""
 
-
-import torch, tqdm
+import os, torch, numpy as np
+import tqdm, matplotlib.pyplot as plt
 from torch.utils.data import Dataset
 from typing import Union, List, Tuple, Any
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.manifold import TSNE
 
 
 def get_image_embeddings(
@@ -48,9 +50,7 @@ def get_image_embeddings(
         # insert batch dimension:
         image = image.unsqueeze(dim=0)
         image = image.to(device)
-        assert (
-            len(tuple(image.size())) == 4 and image.size(dim=1) == 3
-        ), "Error with image shape."
+        assert len(tuple(image.size())) == 4 and image.size(dim=1) == 3, "Error with image shape."
 
         # compute image embedding if emotion tag class was used during training:
         if tag in image_dataset_tags:
@@ -194,12 +194,50 @@ def get_embedding_ds(model, audio_chunks):
 
     if model.multi_task:
         with torch.no_grad():
-            chunk_intra_embeds, chunk_cross_embeds = model.compute_audio_embeds(
-                audio_chunks
-            )
+            chunk_intra_embeds, chunk_cross_embeds = model.compute_audio_embeds(audio_chunks)
         return chunk_intra_embeds, chunk_cross_embeds
 
     else:
         with torch.no_grad():
             chunk_embeds = model.compute_audio_embeds(audio_chunks)
         return chunk_embeds
+
+
+def visualize(features, labels, name):
+    """
+    Visualizes the given features and labels using t-SNE.
+    """
+    tsne = TSNE(
+        n_components=2, perplexity=50, learning_rate=130, metric="cosine", square_distances=True
+    ).fit_transform(features)
+
+    # normalize t-SNE output:
+    tx = MinMaxScaler().fit_transform(tsne[:, 0].reshape(-1, 1))[:, 0]
+    ty = MinMaxScaler().fit_transform(tsne[:, 1].reshape(-1, 1))[:, 0]
+
+    fig = plt.figure()
+    plt.rcParams["font.size"] = 10
+    ax = fig.add_subplot(111)
+
+    # list of colors for each emotion
+    colors = ["red", "blue", "crimson", "steelblue", "...", "..."]
+
+    for label in range(6):
+        # find the samples of this class
+        indices = [i for (i, l) in enumerate(labels) if l == label]
+        # we assume features = [audio_features, image_features]
+        ln = int(len(indices) / 2)
+        # audio points
+        curr_tx, curr_ty = np.take(tx, indices[:ln]), np.take(ty, indices[:ln])
+        ax.scatter(curr_tx, curr_ty, c=colors[label], marker=".", label=str(label) + " - Audio")
+        # image points
+        curr_tx, curr_ty = np.take(tx, indices[ln:]), np.take(ty, indices[ln:])
+        ax.scatter(curr_tx, curr_ty, c=colors[label + 2], marker="*", label=str(label) + " - Image")
+
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.legend(loc="best")
+
+    os.makedirs("tsne/", exist_ok=True)
+    fig.savefig("tsne/" + name)
+    plt.close()
