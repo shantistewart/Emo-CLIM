@@ -193,12 +193,14 @@ if __name__ == "__main__":
         root=dataset_configs["image_dataset_dir"],
         metadata_file_name="metadata_train.csv",
         augment_params=image_augment_configs,
-        eval=False
+        eval=False,
+        preprocess=None
     )
     image_val_dataset = IMACImages(     # TODO: Double-check that having validation dataset in eval mode makes sense.
         root=dataset_configs["image_dataset_dir"],
         metadata_file_name="metadata_val.csv",
-        eval=True,
+        augment_params=None,     # no data augmentations
+        eval=False,
         preprocess=image_preprocess_transform
     )
 
@@ -217,7 +219,7 @@ if __name__ == "__main__":
         metadata_file_name="new_split_metadata_files/metadata_val.csv",
         clip_length_samples=audio_clip_length,
         sample_rate=dataset_configs["sample_rate"],
-        augment_params=None,
+        augment_params=None,     # no data augmentations
         eval=False,
         audio_model=audio_backbone_configs["model_name"]
     )

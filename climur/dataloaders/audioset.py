@@ -132,7 +132,7 @@ class AudioSetMood(Dataset):
                     shape: (n_views, clip_length)
             else:
                 audio_chunks (Tensor): Raw audio clip chunked with a sliding window.
-                    shape: (n_chunks, 1, clip_length)
+                    shape: (n_chunks, clip_length)
             tag (str): Emotion tag.
         """
 
@@ -174,6 +174,7 @@ class AudioSetMood(Dataset):
                     audio_augment_list.append(audio_augment)
                 audio = torch.stack(audio_augment_list, dim=0)
             else:
+                # TODO: Should technically change to a center crop for validation set (eval = false, no augmentations).
                 # insert n_views dimension for compatibility:
                 audio = audio.unsqueeze(dim=0)
         
@@ -181,19 +182,22 @@ class AudioSetMood(Dataset):
             # split audio clip into chunks:
             step = int(np.around((1 - self.overlap_ratio) * self.clip_length))
             audio_chunks = audio.unfold(dimension=0, size=self.clip_length, step=step)
-            # insert n_views dimension for compatibility:
-            audio_chunks = audio_chunks.unsqueeze(dim=1)
             # sanity check shape:
-            assert len(tuple(audio_chunks.size())) == 3 and audio_chunks.size(dim=1) == 1 and audio_chunks.size(dim=-1) == self.clip_length, "Error with shape of chunked audio clip."
+            assert len(tuple(audio_chunks.size())) == 2  and audio_chunks.size(dim=-1) == self.clip_length, "Error with shape of chunked audio clip."
         
         # get emotion tag:
         tag = self.metadata.loc[idx, "label"]
 
         # CLAP input requires audio load in int16 format:     # TODO: Check if this ok to do after augmentations.
         if self.audio_model == "CLAP":
-            audio = np.clip(audio, a_min=-1., a_max=1.)
-            audio = (audio * 32767.).int()
-            audio = (audio / 32767.0).float()
+            if not self.eval:
+                audio = np.clip(audio, a_min=-1., a_max=1.)
+                audio = (audio * 32767.).int()
+                audio = (audio / 32767.0).float()
+            else:     # TODO: Double-check this works on chunked audio clip.
+                audio_chunks = np.clip(audio_chunks, a_min=-1., a_max=1.)
+                audio_chunks = (audio_chunks * 32767.).int()
+                audio_chunks = (audio_chunks / 32767.0).float()
         
         if not self.eval:
             return audio, tag

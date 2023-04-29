@@ -40,10 +40,11 @@ class IMACImages(Dataset):
         """
 
         # validate parameters:
+        assert augment_params is not None or preprocess is not None, "Either augment_params or preprocess must be not None."
         if eval:
             assert augment_params is None, "Not allowed to apply augmentations when in evaluation mode."
             assert preprocess is not None, "Need preprocessing when in evaluation mode."
-        
+
         # save parameters:
         self.root = root
         self.eval = eval
@@ -92,7 +93,7 @@ class IMACImages(Dataset):
                     shape: (n_views, image_channels, image_height, image_width)
             else:
                 image (Tensor): Preprocessed image.
-                    shape: (1, image_channels, image_height, image_width)
+                    shape: (image_channels, image_height, image_width)
             tag (str): Emotion tag.
         """
 
@@ -112,18 +113,21 @@ class IMACImages(Dataset):
                     # image_augment = self.transform(image)
                     image_augments_list.append(image_augment)
                 image = torch.stack(image_augments_list)
+            # only preprocess image:
             else:
-                image = torchvision.io.read_image(file_path)
-                # insert n_views dimension for compatibility:
-                image = image.unsqueeze(dim=0)
+                if self.preprocess is not None:
+                    with Image.open(file_path) as image_file:
+                        image = self.preprocess(image_file)
+                    # insert n_views dimension for compatibility:
+                    image = image.unsqueeze(dim=0)
+                else:
+                    raise RuntimeError("Both self.transform and self.preprocess are None.")
         
         # load image in evaluation mode:
         else:
             if self.preprocess is not None:
                 with Image.open(file_path) as image_file:
                     image = self.preprocess(image_file)
-                # insert n_views dimension for compatibility:
-                image = image.unsqueeze(dim=0)
             else:
                 raise RuntimeError("In evaluation mode and could not preprocess image.")
         

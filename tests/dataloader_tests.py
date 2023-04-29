@@ -106,6 +106,7 @@ if __name__ == "__main__":
         metadata_file_name=AUDIOSET_METADATA_FILE,
         clip_length_samples=clip_length_samples,
         sample_rate=sample_rate,
+        augment_params=None,
         eval=True,
         overlap_ratio=overlap_ratio
     )
@@ -117,7 +118,7 @@ if __name__ == "__main__":
     # test __getitem__() method:
     print("Testing __getitem__() method...")
     audio_chunks, tag = audioset_dataset_eval[example_idx]
-    assert len(tuple(audio_chunks.size())) == 3 and audio_chunks.size(dim=1) == 1 and audio_chunks.size(dim=-1) == clip_length_samples, "Error with audio shape."
+    assert len(tuple(audio_chunks.size())) == 2 and audio_chunks.size(dim=-1) == clip_length_samples, "Error with audio shape."
 
 
 
