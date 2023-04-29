@@ -220,7 +220,7 @@ def visualize(features, labels, name):
     ax = fig.add_subplot(111)
 
     # list of colors for each emotion
-    colors = ["red", "blue", "crimson", "steelblue", "...", "..."]
+    colors = ["red", "purple", "blue", "green", "orange", "black"]
 
     for label in range(6):
         # find the samples of this class
@@ -232,7 +232,7 @@ def visualize(features, labels, name):
         ax.scatter(curr_tx, curr_ty, c=colors[label], marker=".", label=str(label) + " - Audio")
         # image points
         curr_tx, curr_ty = np.take(tx, indices[ln:]), np.take(ty, indices[ln:])
-        ax.scatter(curr_tx, curr_ty, c=colors[label + 2], marker="*", label=str(label) + " - Image")
+        ax.scatter(curr_tx, curr_ty, c=colors[label], marker="+", label=str(label) + " - Image")
 
     ax.set_xticks([])
     ax.set_yticks([])
