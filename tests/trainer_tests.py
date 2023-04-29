@@ -18,6 +18,7 @@ from climur.models.vcmr_trainer import VCMR
 from climur.models.audio_backbones import ShortChunkCNNEmbeddings, HarmonicCNNEmbeddings, SampleCNNEmbeddings
 from climur.trainers.image2music import Image2Music
 from climur.utils.constants import (
+    CLIP_IMAGE_SIZE,
     SHORTCHUNK_INPUT_LENGTH,
     HARMONIC_CNN_INPUT_LENGTH,
     SAMPLE_CNN_INPUT_LENGTH,
@@ -38,7 +39,6 @@ AUDIOSET_METADATA_FILE = "new_split_metadata_files/metadata_train.csv"
 
 # image constants:
 IMAGE_CHANNELS = 3
-IMAGE_HEIGHT, IMAGE_WIDTH = 224, 224
 IMAGE_EMBED_DIM = CLIP_EMBED_DIM
 # audio constants:
 SAMPLE_RATE = 16000
@@ -80,11 +80,24 @@ loss_weights = {
     "image2audio": 0.25,
     "audio2image": 0.25
 }
-batch_size = 64
+batch_size = 32
 n_batches = 100
 optimizer = "Adam"
 learn_rate = 0.001
 verbose = True
+
+# data augmentation options:
+audio_augment_params = {
+    "n_views": 2,
+    "gaussian_noise": {
+        "prob": 0.8,
+        "min_snr": 5.0,
+        "max_snr": 40.0
+    }
+}
+image_augment_params = {
+    "n_views": 2
+}
 
 
 if __name__ == "__main__":
@@ -162,14 +175,17 @@ if __name__ == "__main__":
     image_dataset = IMACImages(
         root=IMAC_IMAGES_DATA_ROOT,
         metadata_file_name=IMAC_IMAGES_METADATA_FILE,
-        preprocess=image_preprocess_transform
+        augment_params=image_augment_params,
+        eval=False
     )
     # create audio dataset:
     audio_dataset = AudioSetMood(
         root=AUDIOSET_DATA_ROOT,
         metadata_file_name=AUDIOSET_METADATA_FILE,
         clip_length_samples=audio_clip_length,
-        sample_rate=SAMPLE_RATE
+        sample_rate=SAMPLE_RATE,
+        augment_params=audio_augment_params,
+        eval=False
     )
     effective_length = n_batches * batch_size
     # create multimodal dataset:
@@ -186,23 +202,26 @@ if __name__ == "__main__":
         multimodal_dataset,
         batch_size=batch_size,
         shuffle=True,
+        collate_fn=multimodal_dataset.collate_fn,
         drop_last=True
     )
     assert len(dataloader) == n_batches, "Length of dataloader is incorrect."
-
+    
     # test example batch:
     example_batch = next(iter(dataloader))
-    assert type(example_batch) == dict, "Example batch is of incorrect data type.."
-    assert len(example_batch) == 4, "Example batch has incorrect size."
-    for key, value in example_batch.items():
-        if key == "image_label" or key == "audio_label":
-            assert tuple(value.size()) == (batch_size, ), "Error with shape of {}".format(key)
-        elif key == "image":
-            assert tuple(value.size()) == (batch_size, IMAGE_CHANNELS, IMAGE_HEIGHT, IMAGE_WIDTH), "Error with shape of {}".format(key)
-        elif key == "audio":
-            assert tuple(value.size()) == (batch_size, audio_clip_length), "Error with shape of {}".format(key)
-        else:
-            raise RuntimeError("Unexpected key in example batch dictionary.")
+    assert type(example_batch) == dict and len(example_batch) == 4, "Error with example batch."
+    if image_augment_params is not None:
+        assert tuple(example_batch["image"].size()) == (batch_size * image_augment_params["n_views"], 3, CLIP_IMAGE_SIZE, CLIP_IMAGE_SIZE), "Error with images shape."
+        assert tuple(example_batch["image_label"].size()) == (batch_size * image_augment_params["n_views"], ), "Error with image labels shape."
+    else:
+        assert tuple(example_batch["image"].size()) == (batch_size, 3, CLIP_IMAGE_SIZE, CLIP_IMAGE_SIZE), "Error with images shape."
+        assert tuple(example_batch["image_label"].size()) == (batch_size, ), "Error with image labels shape."
+    if audio_augment_params is not None:
+        assert tuple(example_batch["audio"].size()) == (batch_size * audio_augment_params["n_views"], audio_clip_length), "Error with audio clips shape."
+        assert tuple(example_batch["audio_label"].size()) == (batch_size * audio_augment_params["n_views"], ), "Error with audio labels shape."
+    else:
+        assert tuple(example_batch["audio"].size()) == (batch_size, audio_clip_length), "Error with audio clips shape."
+        assert tuple(example_batch["audio_label"].size()) == (batch_size, ), "Error with audio labels shape."
 
 
     # ----------
@@ -266,10 +285,10 @@ if __name__ == "__main__":
             print("image_cross_embds size: {}".format(tuple(image_cross_embeds.size())))
             print("audio_intra_embeds size: {}".format(tuple(audio_intra_embeds.size())))
             print("audio_cross_embds size: {}".format(tuple(audio_cross_embeds.size())))
-        assert tuple(image_intra_embeds.size()) == (batch_size, output_embed_dim), "Error with shape of image_intra_embeds."
-        assert tuple(image_cross_embeds.size()) == (batch_size, output_embed_dim), "Error with shape of image_cross_embeds."
-        assert tuple(audio_intra_embeds.size()) == (batch_size, output_embed_dim), "Error with shape of audio_intra_embeds."
-        assert tuple(audio_cross_embeds.size()) == (batch_size, output_embed_dim), "Error with shape of audio_cross_embeds."
+        assert tuple(image_intra_embeds.size()) == (batch_size * image_augment_params["n_views"], output_embed_dim), "Error with shape of image_intra_embeds."
+        assert tuple(image_cross_embeds.size()) == (batch_size * image_augment_params["n_views"], output_embed_dim), "Error with shape of image_cross_embeds."
+        assert tuple(audio_intra_embeds.size()) == (batch_size * audio_augment_params["n_views"], output_embed_dim), "Error with shape of audio_intra_embeds."
+        assert tuple(audio_cross_embeds.size()) == (batch_size * audio_augment_params["n_views"], output_embed_dim), "Error with shape of audio_cross_embeds."
     
     else:
         image_embeds, audio_embeds = full_model.forward(images, audios)
@@ -277,8 +296,8 @@ if __name__ == "__main__":
             print()
             print("Image embeddings size: {}".format(tuple(image_embeds.size())))
             print("Audio embeddings size: {}".format(tuple(audio_embeds.size())))
-        assert tuple(image_embeds.size()) == (batch_size, output_embed_dim), "Error with shape of image embeddings."
-        assert tuple(audio_embeds.size()) == (batch_size, output_embed_dim), "Error with shape of audio embeddings."
+        assert tuple(image_embeds.size()) == (batch_size * image_augment_params["n_views"], output_embed_dim), "Error with shape of image embeddings."
+        assert tuple(audio_embeds.size()) == (batch_size * audio_augment_params["n_views"], output_embed_dim), "Error with shape of audio embeddings."
 
     # test training_step() method:
     if verbose:
@@ -312,14 +331,14 @@ if __name__ == "__main__":
             print()
             print("image_intra_embeds size: {}".format(tuple(image_intra_embeds.size())))
             print("image_cross_embds size: {}".format(tuple(image_cross_embeds.size())))
-        assert tuple(image_intra_embeds.size()) == (batch_size, output_embed_dim), "Error with shape of image_intra_embeds."
-        assert tuple(image_cross_embeds.size()) == (batch_size, output_embed_dim), "Error with shape of image_cross_embeds."
+        assert tuple(image_intra_embeds.size()) == (batch_size * image_augment_params["n_views"], output_embed_dim), "Error with shape of image_intra_embeds."
+        assert tuple(image_cross_embeds.size()) == (batch_size * image_augment_params["n_views"], output_embed_dim), "Error with shape of image_cross_embeds."
     else:
         image_embeds = full_model.compute_image_embeds(images)
         if verbose:
             print()
             print("Image embeddings size: {}".format(tuple(image_embeds.size())))
-        assert tuple(image_embeds.size()) == (batch_size, output_embed_dim), "Error with shape of image embeddings."
+        assert tuple(image_embeds.size()) == (batch_size * image_augment_params["n_views"], output_embed_dim), "Error with shape of image embeddings."
     
     # test compute_audio_embeds() method:
     if verbose:
@@ -330,14 +349,14 @@ if __name__ == "__main__":
             print()
             print("audio_intra_embeds size: {}".format(tuple(audio_intra_embeds.size())))
             print("audio_cross_embds size: {}".format(tuple(audio_cross_embeds.size())))
-        assert tuple(audio_intra_embeds.size()) == (batch_size, output_embed_dim), "Error with shape of audio_intra_embeds."
-        assert tuple(audio_cross_embeds.size()) == (batch_size, output_embed_dim), "Error with shape of audio_cross_embeds."
+        assert tuple(audio_intra_embeds.size()) == (batch_size * audio_augment_params["n_views"], output_embed_dim), "Error with shape of audio_intra_embeds."
+        assert tuple(audio_cross_embeds.size()) == (batch_size * audio_augment_params["n_views"], output_embed_dim), "Error with shape of audio_cross_embeds."
     else:
         audio_embeds = full_model.compute_audio_embeds(audios)
         if verbose:
             print()
             print("Audio embeddings size: {}".format(tuple(audio_embeds.size())))
-        assert tuple(audio_embeds.size()) == (batch_size, output_embed_dim), "Error with shape of audio embeddings."
+        assert tuple(audio_embeds.size()) == (batch_size * audio_augment_params["n_views"], output_embed_dim), "Error with shape of audio embeddings."
 
 
     print("\n")
