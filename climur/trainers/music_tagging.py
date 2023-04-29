@@ -43,6 +43,7 @@ class MTAT_Training(LightningModule):
         self.torch_device = device
         self.backbone = backbone
         self.backbone.eval()
+        self.backbone.requires_grad_(False)
 
         # create base audio projector:
         self.projector = nn.Sequential(
@@ -54,7 +55,6 @@ class MTAT_Training(LightningModule):
 
         # create loss functions:
         self.criterion = nn.BCEWithLogitsLoss()
-        #self.pr_auc = AveragePrecision(task="multilabel", pos_label=1)
 
     def forward(self, audios: torch.Tensor):
         embeds = get_embedding_ds(self.backbone, audios)
@@ -106,10 +106,13 @@ class MTAT_Training(LightningModule):
         predictions = self.forward(audios)
         # evaluate:
         loss = self.criterion(predictions, labels)
-        #pr_auc = self.pr_auc(predictions, labels)
+        # compute prauc with sklearn
+        pr_auc = average_precision_score(labels.cpu(), predictions.cpu(), average="macro")
+        #roc_auc = roc_auc_score(labels.cpu(), predictions.cpu(), average="macro")
         # log results:
         self.log("validation/loss", loss)
-        #self.log("validation/pr_auc", pr_auc)
+        self.log("validation/pr_auc", pr_auc)
+        #self.log("validation/roc_auc", roc_auc)
         return loss
 
     def configure_optimizers(self) -> Any:
