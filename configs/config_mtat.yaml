@@ -36,7 +36,7 @@ full_model:
 # training options:
 training:
   batch_size: 64
-  max_epochs: 30
+  max_epochs: 100
   optimizer: "AdamW"
   learn_rate: 0.001
   val_check_interval: 1.0     # how often to check validation set within a single training epoch

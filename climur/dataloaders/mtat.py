@@ -97,6 +97,7 @@ class MTAT(Dataset):
         self.split = split
         self.clip_length = duration
         self.overlap_ratio = 0
+        self.crop = RandomResizedCrop(n_samples=self.clip_length)
 
         assert subset is None or subset in ["train", "valid", "test"], (
             "When `subset` not None, it must take a value from "
@@ -111,7 +112,7 @@ class MTAT(Dataset):
                 os.makedirs(self._path)
 
             zip_files = []
-            for url, checksum in _CHECKSUMS.items():
+            for url, _ in _CHECKSUMS.items():
                 target_fn = os.path.basename(url)
                 target_fp = os.path.join(self._path, target_fn)
                 if ".zip" in target_fp:
@@ -173,15 +174,13 @@ class MTAT(Dataset):
 
     def segment_audio_sample(self, audio):
         audio_len = audio.shape[0]
-        segment_len = int(self.clip_length * self.sr)
-
+        segment_len = int(self.clip_length)
         if audio_len < segment_len:
             audio = torch.cat([audio, torch.zeros(segment_len - audio_len)])
 
         if self.subset != "test":
             # randomly crop to target clip length:
-            transform = RandomResizedCrop(n_samples=self.clip_length)
-            audio_chunks = transform(audio)
+            audio_chunks = self.crop(audio)
             #start_idx = np.random.randint(low=0, high=audio_len - self.clip_length + 1)
             #end_idx = start_idx + self.clip_length
             #audio_chunks = audio[start_idx : end_idx]
@@ -190,15 +189,9 @@ class MTAT(Dataset):
             #    "Error with cropping audio clip."
             #)
         else:
-            # split audio clip into chunks:
             step = int(np.around((1 - self.overlap_ratio) * self.clip_length))
             audio_chunks = audio.unfold(dimension=0, size=self.clip_length, step=step)
-            # sanity check shape:
-            assert (
-                len(tuple(audio_chunks.size())) == 2 \
-                and audio_chunks.size(dim=-1) == self.clip_length,
-                "Error with shape of chunked audio clip."
-            )
+            
         return audio_chunks
 
     def __getitem__(self, n: int) -> Tuple[Tensor, Tensor]:
@@ -207,6 +200,7 @@ class MTAT(Dataset):
 
         filepath = self.file_path(n).replace(".mp3", ".wav")
         audio, sr = torchaudio.load(filepath)
+
         if sr != self.sr:
             resample = torchaudio.transforms.Resample(sr, self.sr)
             audio = resample(audio)
@@ -221,9 +215,23 @@ if __name__ == "__main__":
     dataset = MTAT(
         root="/data/avramidi/magnatagatune/",
         download=False,
-        subset="test",
+        subset="train",
         sr=16000,
+        duration=80000,
     )
     print(len(dataset))
     print(dataset[0][0].shape)
     print(dataset[0][1].shape)
+
+    loader = torch.utils.data.DataLoader(
+        dataset,
+        batch_size=64,
+        shuffle=True,
+        drop_last=True,
+        num_workers=4,
+        pin_memory=True,
+    )
+    for batch in loader:
+        print(batch[0].shape)
+        print(batch[1].shape)
+        break

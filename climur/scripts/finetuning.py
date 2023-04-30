@@ -14,6 +14,8 @@ from climur.models.audio_backbones import (
     ShortChunkCNNEmbeddings,
     HarmonicCNNEmbeddings,
     CLAPEmbeddings,
+)
+from climur.utils.constants import (
     SHORTCHUNK_INPUT_LENGTH,
     HARMONIC_CNN_INPUT_LENGTH,
     CLAP_INPUT_LENGTH,
@@ -170,18 +172,24 @@ if __name__ == "__main__":
         batch_size=training_configs["batch_size"],
         shuffle=True,
         drop_last=True,
+        num_workers=4,
+        pin_memory=True,
     )
     valid_loader = DataLoader(
         valid_dataset,
         batch_size=training_configs["batch_size"],
         shuffle=False,
         drop_last=False,
+        num_workers=4,
+        pin_memory=True,
     )
     test_loader = DataLoader(
         test_dataset,
         batch_size=training_configs["batch_size"],
         shuffle=False,
         drop_last=False,
+        num_workers=4,
+        pin_memory=True,
     )
 
     # -------------------
