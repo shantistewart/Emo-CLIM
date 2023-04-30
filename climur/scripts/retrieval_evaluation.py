@@ -169,6 +169,8 @@ if __name__ == "__main__":
     image_dataset = IMACImages(
         root=dataset_configs["image_dataset_dir"],
         metadata_file_name=image_dataset_metadata_file,
+        augment_params=None,
+        eval=True,
         preprocess=image_preprocess_transform
     )
     # create audio dataset:
@@ -177,8 +179,10 @@ if __name__ == "__main__":
         metadata_file_name=audio_dataset_metadata_file,
         clip_length_samples=audio_clip_length,
         sample_rate=dataset_configs["sample_rate"],
+        augment_params=None,
         eval=True,
-        overlap_ratio=eval_configs["overlap_ratio"]
+        overlap_ratio=eval_configs["overlap_ratio"],
+        audio_model=audio_backbone_configs["model_name"]
     )
 
 
