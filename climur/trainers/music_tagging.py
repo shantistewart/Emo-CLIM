@@ -26,6 +26,7 @@ class MTAT_Training(LightningModule):
         hparams: Dict[str, Any],
         num_classes: int = 50,
         device: Any = None,
+        baseline: bool = False,
     ) -> None:
         """Initialization.
 
@@ -41,6 +42,7 @@ class MTAT_Training(LightningModule):
         self.save_hyperparameters(hparams)
         self.out_dim = num_classes
         self.torch_device = device
+        self.baseline = baseline
         self.backbone = backbone
         self.backbone.eval()
         self.backbone.requires_grad_(False)
@@ -57,7 +59,7 @@ class MTAT_Training(LightningModule):
         self.criterion = nn.BCEWithLogitsLoss()
 
     def forward(self, audios: torch.Tensor):
-        embeds = get_embedding_ds(self.backbone, audios)
+        embeds = get_embedding_ds(self.backbone, audios, self.baseline)
         return self.projector(embeds)
 
     def training_step(self, batch: Dict, _: int) -> torch.Tensor:
