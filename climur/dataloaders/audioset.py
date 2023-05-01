@@ -9,7 +9,7 @@ import torchaudio
 import pandas as pd
 import numpy as np
 from typing import Dict, Tuple
-from audiomentations import Compose, AddBackgroundNoise ,AddGaussianSNR
+from audiomentations import Compose, AddBackgroundNoise, AddGaussianSNR
 from climur.utils.constants import SAMPLE_RATE, AUDIOSET_EMOTION_TAGS_MAP
 
 
@@ -165,25 +165,25 @@ class AudioSetMood(Dataset):
             raise RuntimeError("Audio clip is too short.")
         
         if not self.eval:
-            # randomly crop to target clip length:
-            start_idx = np.random.randint(low=0, high=length - self.clip_length + 1)
-            end_idx = start_idx + self.clip_length
-            audio = audio[start_idx : end_idx]
-            assert tuple(audio.size()) == (self.clip_length, ), "Error with cropping audio clip."
-
             # apply augmentations if selected:
             if self.transform is not None:
-                audio = audio.numpy()
                 audio_augment_list = []
                 for _ in range(self.n_views):
-                    audio_augment = self.transform(audio, sample_rate=self.sample_rate)
+                    # randomly crop to target clip length:
+                    audio_crop = self._random_crop(audio)
+                    assert tuple(audio_crop.size()) == (self.clip_length, ), "Error with cropping audio clip."
+                    # apply other augmentations:
+                    audio_crop = audio_crop.numpy()
+                    audio_augment = self.transform(audio_crop, sample_rate=self.sample_rate)
                     audio_augment = torch.from_numpy(audio_augment)
                     audio_augment_list.append(audio_augment)
                 audio = torch.stack(audio_augment_list, dim=0)
             else:
-                # TODO: Should technically change to a center crop for validation set (eval = false, no augmentations).
+                # randomly crop to target clip length:     # TODO: Should technically change to a center crop for validation set (eval = false, no augmentations).
+                audio_crop = self._random_crop(audio)
+                assert tuple(audio_crop.size()) == (self.clip_length, ), "Error with cropping audio clip."
                 # insert n_views dimension for compatibility:
-                audio = audio.unsqueeze(dim=0)
+                audio = audio_crop.unsqueeze(dim=0)
         
         else:
             # split audio clip into chunks:
@@ -210,4 +210,27 @@ class AudioSetMood(Dataset):
             return audio, tag
         else:
             return audio_chunks, tag
+    
+    def _random_crop(self, audio_orig: Tensor) -> Tensor:
+        """Randomly crops an audio clip.
+
+        Args:
+            audio_orig (Tensor): Original audio.
+                shape: (orig_clip_length, )
+        
+        Returns:
+            audio_crop (Tensor): Randomly cropped audio.
+                shape: (clip_length, )
+        """
+
+        # get original length:
+        length = audio_orig.size(dim=0)
+
+        # randomly crop to target clip length:
+        start_idx = np.random.randint(low=0, high=length - self.clip_length + 1)
+        end_idx = start_idx + self.clip_length
+        audio_crop = audio_orig[start_idx : end_idx]
+        assert tuple(audio_crop.size()) == (self.clip_length, ), "Error with cropping audio clip."
+
+        return audio_crop
 
