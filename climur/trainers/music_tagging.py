@@ -58,7 +58,7 @@ class MTAT_Training(LightningModule):
 
     def forward(self, audios: torch.Tensor):
         embeds = get_embedding_ds(self.backbone, audios)
-        return self.projector(embeds[0])
+        return self.projector(embeds)
 
     def training_step(self, batch: Dict, _: int) -> torch.Tensor:
         """Training step.
@@ -107,12 +107,14 @@ class MTAT_Training(LightningModule):
         # evaluate:
         loss = self.criterion(predictions, labels)
         # compute prauc with sklearn
-        pr_auc = average_precision_score(labels.cpu(), predictions.cpu(), average="macro")
-        #roc_auc = roc_auc_score(labels.cpu(), predictions.cpu(), average="macro")
+        pr_auc = average_precision_score(
+            labels.cpu(), predictions.cpu(), average="macro"
+        )
+        # roc_auc = roc_auc_score(labels.cpu(), predictions.cpu(), average="macro")
         # log results:
         self.log("validation/loss", loss)
         self.log("validation/pr_auc", pr_auc)
-        #self.log("validation/roc_auc", roc_auc)
+        # self.log("validation/roc_auc", roc_auc)
         return loss
 
     def configure_optimizers(self) -> Any:

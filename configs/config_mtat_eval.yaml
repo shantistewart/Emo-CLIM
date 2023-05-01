@@ -1,0 +1,59 @@
+
+
+# Configs for audio music tagging evaluation.
+
+
+---
+# dataset options:
+dataset:
+  dataset_name: "magnatagatune"
+  subset: "test"     # or "test"
+  dataset_dir: "/data/avramidi/magnatagatune"
+  sample_rate: 16000
+
+# audio backbone options:
+audio_backbone:
+  model_name: "HarmonicCNN"      # or "ShortChunk" or "SampleCNN" or "CLAP"
+  last_layer_embed: "layer7"
+  pool_type: "max"
+
+# full model options:
+full_model:
+  checkpoint_path: "/home/avramidi/CLIMuR/train_logs/mtat/HarmonicCNN/frozen/version_44/checkpoints/epoch=15-step=2336.ckpt"
+  multi_task: false
+  output_embed_dim: 128
+  base_proj_hidden_dim: 256
+  base_proj_output_dim: 128
+  normalize_image_embeds: true
+  normalize_audio_embeds: true
+  base_proj_dropout: 0.2     # TODO: Probably can remove this.
+  task_proj_dropout: 0.5     # TODO: Probably can remove this.
+  freeze_image_backbone: true     # TODO: Probably can remove this.
+  freeze_audio_backbone: true     # TODO: Probably can remove this.
+  n_classes: 19
+
+# evaluation options:
+eval:
+  results_dir: null     # automatically sets results directory if set to null (recommended)
+  loss_weights_mode: "all_losses"     # necessary for automatic results directory naming
+  overlap_ratio: 0.5
+  metrics: ["ROC-AUC", "PR-AUC"]
+  gpu: 1
+
+# training options for backbone:
+training:
+  loss_temperature: 0.07     # TODO: Maybe try in range [0.1, 0.3]
+  loss_weights:
+    image2image: 0.25
+    audio2audio: 0.25
+    image2audio: 0.25
+    audio2image: 0.25
+  batch_size: 64
+  max_epochs: 30
+  optimizer: "AdamW"
+  learn_rate: 0.0001
+  val_check_interval: 1.0     # how often to check validation set within a single training epoch
+  n_workers: 4
+  gpu: 1
+...
+

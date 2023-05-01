@@ -87,13 +87,6 @@ if __name__ == "__main__":
         sr=dataset_configs["sample_rate"],
         duration=HARMONIC_CNN_INPUT_LENGTH,
     )
-    test_dataset = MTAT(
-        root=dataset_configs["dataset_dir"],
-        download=False,
-        subset="test",
-        sr=dataset_configs["sample_rate"],
-        duration=HARMONIC_CNN_INPUT_LENGTH,
-    )
 
     # ---------------
     # BACKBONE MODELS
@@ -177,14 +170,6 @@ if __name__ == "__main__":
     )
     valid_loader = DataLoader(
         valid_dataset,
-        batch_size=training_configs["batch_size"],
-        shuffle=False,
-        drop_last=False,
-        num_workers=4,
-        pin_memory=True,
-    )
-    test_loader = DataLoader(
-        test_dataset,
         batch_size=training_configs["batch_size"],
         shuffle=False,
         drop_last=False,

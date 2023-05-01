@@ -1,11 +1,13 @@
 """Utility functions for evaluation."""
 
-import os, torch, numpy as np
+import os, torch, numpy as np, json
 import tqdm, matplotlib.pyplot as plt
 from torch.utils.data import Dataset
 from typing import Union, List, Tuple, Any
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.manifold import TSNE
+from sklearn import metrics
+import pandas as pd
 
 
 def get_image_embeddings(
@@ -50,7 +52,9 @@ def get_image_embeddings(
         # insert batch dimension:
         image = image.unsqueeze(dim=0)
         image = image.to(device)
-        assert len(tuple(image.size())) == 4 and image.size(dim=1) == 3, "Error with image shape."
+        assert (
+            len(tuple(image.size())) == 4 and image.size(dim=1) == 3
+        ), "Error with image shape."
 
         # compute image embedding if emotion tag class was used during training:
         if tag in image_dataset_tags:
@@ -194,7 +198,9 @@ def get_embedding_ds(model, audio_chunks):
 
     if model.multi_task:
         with torch.no_grad():
-            chunk_intra_embeds, chunk_cross_embeds = model.compute_audio_embeds(audio_chunks)
+            chunk_intra_embeds, chunk_cross_embeds = model.compute_audio_embeds(
+                audio_chunks
+            )
         return chunk_intra_embeds, chunk_cross_embeds
 
     else:
@@ -203,12 +209,24 @@ def get_embedding_ds(model, audio_chunks):
         return chunk_embeds
 
 
-def visualize(features, labels, name):
+def visualize(features_au, labels_au, features_im=None, labels_im=None, name="temp"):
     """
     Visualizes the given features and labels using t-SNE.
     """
+    # concatenate image and audio features:
+    if features_im is not None:
+        features = np.concatenate((features_im, features_au), axis=0)
+        labels = np.concatenate((labels_im, labels_au), axis=0)
+    else:
+        features = features_au
+        labels = labels_au
+
     tsne = TSNE(
-        n_components=2, perplexity=50, learning_rate=130, metric="cosine", square_distances=True
+        n_components=2,
+        perplexity=5,
+        learning_rate=130,
+        metric="cosine",
+        square_distances=True,
     ).fit_transform(features)
 
     # normalize t-SNE output:
@@ -219,20 +237,45 @@ def visualize(features, labels, name):
     plt.rcParams["font.size"] = 10
     ax = fig.add_subplot(111)
 
-    # list of colors for each emotion
+    # plot the t-SNE for a single class occurence
+    labels = ["class" if l[0] else "no_class" for l in labels]
+    list_labels = list(set(labels))
     colors = ["red", "purple", "blue", "green", "orange", "black"]
+    colors = {emotion: color for emotion, color in zip(list_labels, colors)}
 
-    for label in range(6):
+    for label in list_labels:
         # find the samples of this class
         indices = [i for (i, l) in enumerate(labels) if l == label]
         # we assume features = [audio_features, image_features]
-        ln = int(len(indices) / 2)
-        # audio points
-        curr_tx, curr_ty = np.take(tx, indices[:ln]), np.take(ty, indices[:ln])
-        ax.scatter(curr_tx, curr_ty, c=colors[label], marker=".", label=str(label) + " - Audio")
-        # image points
-        curr_tx, curr_ty = np.take(tx, indices[ln:]), np.take(ty, indices[ln:])
-        ax.scatter(curr_tx, curr_ty, c=colors[label], marker="+", label=str(label) + " - Image")
+        if features_im is not None:
+            ln = int(len(indices) / 2)
+            # audio points
+            curr_tx, curr_ty = np.take(tx, indices[:ln]), np.take(ty, indices[:ln])
+            ax.scatter(
+                curr_tx,
+                curr_ty,
+                c=colors[label],
+                marker=".",
+                label=label,
+            )
+            # image points
+            curr_tx, curr_ty = np.take(tx, indices[ln:]), np.take(ty, indices[ln:])
+            ax.scatter(
+                curr_tx,
+                curr_ty,
+                c=colors[label],
+                marker="+",
+                label=label,
+            )
+        else:
+            curr_tx, curr_ty = np.take(tx, indices), np.take(ty, indices)
+            ax.scatter(
+                curr_tx,
+                curr_ty,
+                c=colors[label],
+                marker=".",
+                label=label,
+            )
 
     ax.set_xticks([])
     ax.set_yticks([])
@@ -241,3 +284,124 @@ def visualize(features, labels, name):
     os.makedirs("tsne/", exist_ok=True)
     fig.savefig("tsne/" + name)
     plt.close()
+
+
+def evaluate(
+    model: Any,
+    dataset: Any,
+    dataset_name: str,
+    audio_length: int,
+    device: torch.device = None,
+    output_dir: str = "results/",
+    tsne_name: str = "tsne_mtat_binary.png",
+):
+    """Performs evaluation of supervised models on music tagging"""
+    os.makedirs(output_dir, exist_ok=True)
+
+    # run inference:
+    model = model.to(device)
+    model.eval()
+
+    with torch.no_grad():
+        # create wrapper dataset for splitting songs:
+        test_dataset = dataset
+        features, y_pred, y_true = [], [], []
+
+        # run inference:
+        for idx in tqdm.tqdm(range(len(test_dataset))):
+            # get audio of song (split into segments of length audio_length) and label:
+            audio_song, label = test_dataset[idx]
+            assert (
+                audio_song.size(dim=-1) == audio_length
+            ), "Error with shape of song audio."
+            audio_song = audio_song.to(device)
+
+            # pass song through model to get features (embeddings) and outputs (logits) of each segment:
+            feat = get_embedding_ds(model.backbone, audio_song)
+            output = model(audio_song)
+            output = torch.sigmoid(output)
+
+            # average segment features across song = song-level feature:
+            feat_song = feat.mean(dim=0)
+            assert feat_song.dim() == 1 and feat_song.size(dim=0) == feat.size(
+                dim=-1
+            ), "Error with shape of song-level feature."
+
+            # save true label and song-level feature:
+            y_true.append(label)
+            features.append(feat_song)
+            pred_song = torch.mean(output, dim=0)
+
+            # sanity check shape:
+            assert pred_song.dim() == 1 and pred_song.size(dim=0) == output.size(
+                dim=-1
+            ), "Error with shape of song-level output."
+
+            # save predicted label (song-level output):
+            y_pred.append(pred_song)
+
+    # convert lists to numpy arrays:
+    y_true = torch.stack(y_true, dim=0).cpu().numpy()
+    y_pred = torch.stack(y_pred, dim=0).cpu().numpy()
+    features = torch.stack(features, dim=0).cpu().numpy()
+
+    # save true labels and song-level features:
+    np.save(os.path.join(f"{output_dir}/labels.npy"), y_true)
+    np.save(os.path.join(f"{output_dir}/features.npy"), features)
+
+    visualize(features, y_true, name=tsne_name)
+
+    # compute performance metrics:
+    if dataset_name in ["magnatagatune", "mtg-jamendo-dataset"]:
+        # convert tag names to tag indices:
+        tag_indices = [dataset.label2idx[tag] for tag in dataset.label_list]
+        try:
+            global_roc = metrics.roc_auc_score(
+                y_true[:, tag_indices],
+                y_pred[:, tag_indices],
+                average="macro",
+            )
+            global_precision = metrics.average_precision_score(
+                y_true[:, tag_indices],
+                y_pred[:, tag_indices],
+                average="macro",
+            )
+        except:
+            print("Warning: at least 1 global metric was not able to be computed.")
+            global_roc = np.nan
+            global_precision = np.nan
+
+        # save to json file (rounded to 4 decimal places):
+        global_metrics_dict = {
+            "ROC-AUC": np.around(global_roc, decimals=4),
+            "PR-AUC": np.around(global_precision, decimals=4),
+        }
+        with open(f"{output_dir}/global_metrics.json", "w") as json_file:
+            json.dump(global_metrics_dict, json_file, indent=3)
+
+        # compute tag-wise metrics:
+        try:
+            tag_roc = metrics.roc_auc_score(
+                y_true[:, tag_indices],
+                y_pred[:, tag_indices],
+                average=None,
+            )
+            tag_precision = metrics.average_precision_score(
+                y_true[:, tag_indices],
+                y_pred[:, tag_indices],
+                average=None,
+            )
+            # save to csv file:
+            tag_metrics_dict = {
+                name: {"ROC-AUC": roc, "PR-AUC": precision}
+                for name, roc, precision in zip(
+                    dataset.label_list, tag_roc, tag_precision
+                )
+            }
+            tag_metrics_df = pd.DataFrame.from_dict(tag_metrics_dict, orient="index")
+            tag_metrics_df.to_csv(f"{output_dir}/tag_metrics.csv", index_label="tag")
+        except:
+            print("Warning: at least 1 tag-wise metric was not able to be computed.")
+            pass
+
+    return global_metrics_dict

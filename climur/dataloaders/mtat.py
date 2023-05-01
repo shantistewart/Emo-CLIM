@@ -98,6 +98,28 @@ class MTAT(Dataset):
         self.clip_length = duration
         self.overlap_ratio = 0
         self.crop = RandomResizedCrop(n_samples=self.clip_length)
+        self.of_interest = [
+            1,
+            # 2,
+            3,
+            6,
+            7,
+            # 8,
+            # 10,
+            16,
+            17,
+            # 23,
+            # 24,
+            29,
+            # 30,
+            34,
+            37,
+            38,
+            # 45,
+            46,
+            47,
+        ]
+        self.of_interest = np.array(self.of_interest)
 
         assert subset is None or subset in ["train", "valid", "test"], (
             "When `subset` not None, it must take a value from "
@@ -181,17 +203,17 @@ class MTAT(Dataset):
         if self.subset != "test":
             # randomly crop to target clip length:
             audio_chunks = self.crop(audio)
-            #start_idx = np.random.randint(low=0, high=audio_len - self.clip_length + 1)
-            #end_idx = start_idx + self.clip_length
-            #audio_chunks = audio[start_idx : end_idx]
-            #assert (
-            #    audio.size(dim=0) == self.clip_length, 
+            # start_idx = np.random.randint(low=0, high=audio_len - self.clip_length + 1)
+            # end_idx = start_idx + self.clip_length
+            # audio_chunks = audio[start_idx : end_idx]
+            # assert (
+            #    audio.size(dim=0) == self.clip_length,
             #    "Error with cropping audio clip."
-            #)
+            # )
         else:
             step = int(np.around((1 - self.overlap_ratio) * self.clip_length))
             audio_chunks = audio.unfold(dimension=0, size=self.clip_length, step=step)
-            
+
         return audio_chunks
 
     def __getitem__(self, n: int) -> Tuple[Tensor, Tensor]:
@@ -205,6 +227,7 @@ class MTAT(Dataset):
             resample = torchaudio.transforms.Resample(sr, self.sr)
             audio = resample(audio)
         audio = self.segment_audio_sample(audio.squeeze())
+        label = np.array(label)[self.of_interest]
         return audio, FloatTensor(label)
 
     def __len__(self) -> int:
