@@ -18,8 +18,13 @@ audio_augment:
   n_views: 2
   gaussian_noise:
     prob: 0.8
-    min_snr: 5.0
-    max_snr: 40.0
+    min_snr: 5.0      # in dB
+    max_snr: 40.0     # in dB
+  background_noise:
+    sounds_path: "/proj/systewar/datasets/NSynth/nsynth-train/audio"
+    prob: 0.8
+    min_snr: 3.0      # in dB
+    max_snr: 30.0     # in dB
 image_augment:
   n_views: 2     # currently must be equal to n_views of audio_augment
 

@@ -9,7 +9,7 @@ import torchaudio
 import pandas as pd
 import numpy as np
 from typing import Dict, Tuple
-from audiomentations import Compose, AddGaussianSNR
+from audiomentations import Compose, AddBackgroundNoise ,AddGaussianSNR
 from climur.utils.constants import SAMPLE_RATE, AUDIOSET_EMOTION_TAGS_MAP
 
 
@@ -98,6 +98,13 @@ class AudioSetMood(Dataset):
         if augment_params is not None:
             self.n_views = augment_params["n_views"]
             self.transform = Compose([
+                AddBackgroundNoise(
+                    sounds_path=augment_params["background_noise"]["sounds_path"],
+                    noise_rms="relative",
+                    min_snr_in_db=augment_params["background_noise"]["min_snr"],
+                    max_snr_in_db=augment_params["background_noise"]["max_snr"],
+                    p=augment_params["background_noise"]["prob"]
+                ),
                 AddGaussianSNR(
                     min_snr_in_db=augment_params["gaussian_noise"]["min_snr"],
                     max_snr_in_db=augment_params["gaussian_noise"]["max_snr"],
