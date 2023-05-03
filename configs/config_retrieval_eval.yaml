@@ -6,20 +6,20 @@
 ---
 # dataset options:
 dataset:
-  subset: "val"     # or "test"
+  subset: "test"     # or "test"
   image_dataset_dir: "/proj/systewar/datasets/IMAC/image_dataset"
   audio_dataset_dir: "/proj/systewar/datasets/audioset_music_mood"
-  sample_rate: 16000
+  sample_rate: 48000     # or 16000
 
 # audio backbone options:
 audio_backbone:
-  model_name: "HarmonicCNN"      # or "ShortChunk" or "SampleCNN" or "CLAP"
+  model_name: "CLAP"      # or "HarmonicCNN" or "ShortChunk" or "SampleCNN"
   last_layer_embed: "layer7"
   pool_type: "max"
 
 # full model options:
 full_model:
-  checkpoint_path: "/home/systewar/CLIMuR/train_logs/single_task/HarmonicCNN/frozen/all_losses/version_0/checkpoints/epoch=20-step=2100.ckpt"
+  checkpoint_path: "/proj/tiantian/train_logs/single_task/CLAP/frozen/all_losses/version_0/checkpoints/epoch=20-step=2100.ckpt"
   multi_task: false
   output_embed_dim: 128
   base_proj_hidden_dim: 256
@@ -36,8 +36,8 @@ eval:
   results_dir: null     # automatically sets results directory if set to null (recommended)
   loss_weights_mode: "all_losses"     # necessary for automatic results directory naming
   overlap_ratio: 0.75
-  retrieval_metrics: ["precision", "MRR", "MAP"]
-  k_vals: [1, 5, 10]
+  retrieval_metrics: ["precision", "MRR"]
+  k_vals: [1, 5,]
   gpu: 1
 ...
 
