@@ -26,6 +26,7 @@ class MTAT_Training(LightningModule):
         hparams: Dict[str, Any],
         num_classes: int = 50,
         device: Any = None,
+        baseline: bool = False,
     ) -> None:
         """Initialization.
 
@@ -41,6 +42,7 @@ class MTAT_Training(LightningModule):
         self.save_hyperparameters(hparams)
         self.out_dim = num_classes
         self.torch_device = device
+        self.baseline = baseline
         self.backbone = backbone
         self.backbone.eval()
         self.backbone.requires_grad_(False)
@@ -57,8 +59,8 @@ class MTAT_Training(LightningModule):
         self.criterion = nn.BCEWithLogitsLoss()
 
     def forward(self, audios: torch.Tensor):
-        embeds = get_embedding_ds(self.backbone, audios)
-        return self.projector(embeds[0])
+        embeds = get_embedding_ds(self.backbone, audios, self.baseline)
+        return self.projector(embeds)
 
     def training_step(self, batch: Dict, _: int) -> torch.Tensor:
         """Training step.
@@ -107,12 +109,14 @@ class MTAT_Training(LightningModule):
         # evaluate:
         loss = self.criterion(predictions, labels)
         # compute prauc with sklearn
-        pr_auc = average_precision_score(labels.cpu(), predictions.cpu(), average="macro")
-        #roc_auc = roc_auc_score(labels.cpu(), predictions.cpu(), average="macro")
+        pr_auc = average_precision_score(
+            labels.cpu(), predictions.cpu(), average="macro"
+        )
+        # roc_auc = roc_auc_score(labels.cpu(), predictions.cpu(), average="macro")
         # log results:
         self.log("validation/loss", loss)
         self.log("validation/pr_auc", pr_auc)
-        #self.log("validation/roc_auc", roc_auc)
+        # self.log("validation/roc_auc", roc_auc)
         return loss
 
     def configure_optimizers(self) -> Any:

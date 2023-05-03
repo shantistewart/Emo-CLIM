@@ -20,22 +20,22 @@ audio_backbone:
 
 # full model options:
 full_model:
-  checkpoint_path: "/home/avramidi/CLIMuR/ckpt/epoch=15-step=1600.ckpt"
-  output_embed_dim: 128
-  multi_task: true
+  checkpoint_path: "/home/avramidi/CLIMuR/ckpt/epoch=20-step=2100.ckpt"
+  output_embed_dim: 256 # 256 for harmonic cnn, else 128
+  multi_task: false
   base_proj_hidden_dim: 256
   base_proj_dropout: 0.2
-  base_proj_output_dim: 128
+  base_proj_output_dim: 256 # 256 for harmonic cnn, else 128 (?)
   task_proj_dropout: 0.5
   normalize_image_embeds: true
   normalize_audio_embeds: true
   freeze_image_backbone: true
   freeze_audio_backbone: true
-  n_classes: 50
+  n_classes: 12
 
 # training options:
 training:
-  batch_size: 64
+  batch_size: 128
   max_epochs: 100
   optimizer: "AdamW"
   learn_rate: 0.001
