@@ -183,7 +183,7 @@ if __name__ == "__main__":
 
     if verbose:
         print("\nSetting up full model and logger...")
-
+    """
     full_model = Image2Music.load_from_checkpoint(
         full_model_configs["checkpoint_path"],
         image_backbone=image_backbone,
@@ -204,14 +204,15 @@ if __name__ == "__main__":
     )
     full_model.to(device)
     full_model.eval()
-
+    """
     # create MTAT trainer:
     mtat_model = MTAT_Training(
-        backbone=full_model,
+        backbone=audio_backbone,  # full_model,
         embed_dim=full_model_configs["output_embed_dim"],
         hparams=training_configs,
         num_classes=full_model_configs["n_classes"],
         device=device,
+        baseline=True,
     )
 
     # create logger (logs are saved to /save_dir/name/version/):

@@ -180,7 +180,7 @@ def get_audio_embeddings(
         return audio_embeds, audio_tags
 
 
-def get_embedding_ds(model, audio_chunks):
+def get_embedding_ds(model, audio_chunks, baseline=False):
     """Extracts audio embeddings from input audio dataset.
 
     Args:
@@ -196,13 +196,17 @@ def get_embedding_ds(model, audio_chunks):
     """
     model.eval()
 
-    if model.multi_task:
+    if not baseline and model.multi_task:
         with torch.no_grad():
             chunk_intra_embeds, chunk_cross_embeds = model.compute_audio_embeds(
                 audio_chunks
             )
         return chunk_intra_embeds, chunk_cross_embeds
 
+    elif baseline:
+        with torch.no_grad():
+            chunk_embeds = model(audio_chunks)
+        return chunk_embeds
     else:
         with torch.no_grad():
             chunk_embeds = model.compute_audio_embeds(audio_chunks)
