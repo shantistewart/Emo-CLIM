@@ -1,0 +1,41 @@
+
+
+# Configs for t-SNE visualization.
+
+
+---
+# dataset options:
+dataset:
+  subset: "test"     # or "train" or "val"
+  image_dataset_dir: "/proj/systewar/datasets/IMAC/image_dataset"
+  audio_dataset_dir: "/proj/systewar/datasets/audioset_music_mood"
+  sample_rate: 48000     # or 16000
+
+# audio backbone options:
+audio_backbone:
+  model_name: "CLAP"      # or "HarmonicCNN" or "ShortChunk" or "SampleCNN"
+  last_layer_embed: "layer7"
+  pool_type: "max"
+
+# full model options:
+full_model:
+  checkpoint_path: "/proj/tiantian/train_logs/single_task/CLAP/frozen/all_losses/version_0/checkpoints/epoch=20-step=2100.ckpt"
+  multi_task: false
+  output_embed_dim: 128
+  base_proj_hidden_dim: 256
+  base_proj_dropout: 0.2     # TODO: Probably can remove this.
+  base_proj_output_dim: 128
+  task_proj_dropout: 0.5     # TODO: Probably can remove this.
+  normalize_image_embeds: true
+  normalize_audio_embeds: true
+  freeze_image_backbone: true     # TODO: Probably can remove this.
+  freeze_audio_backbone: true     # TODO: Probably can remove this.
+
+# evaluation options:
+eval:
+  plots_dir: null     # automatically sets plots directory if set to null (recommended)
+  loss_weights_mode: "all_losses"     # necessary for automatic plots directory naming
+  overlap_ratio: 0.75
+  gpu: 1
+...
+
