@@ -36,6 +36,7 @@ eval:
   plots_dir: null     # automatically sets plots directory if set to null (recommended)
   loss_weights_mode: "all_losses"     # necessary for automatic plots directory naming
   overlap_ratio: 0.75
+  plot_title: "CLAP (Unfrozen)"
   gpu: 1
 ...
 

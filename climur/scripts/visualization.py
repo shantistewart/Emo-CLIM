@@ -31,7 +31,8 @@ from climur.utils.constants import (
     HARMONIC_CNN_EMBED_DIM,
     SAMPLE_CNN_EMBED_DIM,
     CLAP_EMBED_DIM,
-    SAMPLE_CNN_DEFAULT_PARAMS
+    SAMPLE_CNN_DEFAULT_PARAMS,
+    LABEL2COLOR
 )
 
 
@@ -322,13 +323,6 @@ if __name__ == "__main__":
     audio_labels = np.asarray(audio_labels, dtype=object)
     assert audio_labels.shape == (audio_cross_embeds.shape[0], ), "Error converting list to numpy array."
 
-    # create dictionary mapping emotion labels to colors:
-    emotion_labels = audio_dataset_tags
-    colors = ["red", "purple", "blue", "green", "orange", "black"]     # arbitrary colors
-    label2color = {}
-    for i in range(len(emotion_labels)):
-        label2color[emotion_labels[i]] = colors[i]
-    
     # visualize image and audio embeddings together:
     if verbose:
         print("\nVisualizing image and audio embeddings together...")
@@ -337,8 +331,9 @@ if __name__ == "__main__":
         image_labels=image_labels,
         audio_embeds=audio_cross_embeds,
         audio_labels=audio_labels,
-        label2color=label2color,
-        save_path=os.path.join(plots_dir, "image_audio_tsne.png")
+        label2color=LABEL2COLOR,
+        save_path=os.path.join(plots_dir, "image_audio_tsne.png"),
+        plot_title=eval_configs["plot_title"]
     )
 
 

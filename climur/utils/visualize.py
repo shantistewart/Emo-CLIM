@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from typing import Dict
 
 
-def visualize_embeds(image_embeds: ndarray, image_labels: ndarray, audio_embeds: ndarray, audio_labels: ndarray, label2color: Dict, save_path: str) -> None:
+def visualize_embeds(image_embeds: ndarray, image_labels: ndarray, audio_embeds: ndarray, audio_labels: ndarray, label2color: Dict, save_path: str, plot_title: str) -> None:
     """Visualizes image and audio embeddings together with t-SNE.
 
     Args:
@@ -23,6 +23,7 @@ def visualize_embeds(image_embeds: ndarray, image_labels: ndarray, audio_embeds:
             shape: (n_audio_clips, )
         label2color (dict): Dictionary mapping emotion labels to colors.
         save_path (str): Path to save plot.
+        plot_title (str): Plot title.
     
     Returns: None
     """
@@ -61,7 +62,7 @@ def visualize_embeds(image_embeds: ndarray, image_labels: ndarray, audio_embeds:
     # create plot:
     fig = plt.figure()
     plt.rcParams["font.size"] = 10
-    ax = fig.add_subplot(111)     # what is this?
+    ax = fig.add_subplot(1, 1, 1)
 
     for label in emotion_labels:
         # get images t-SNE features for current emotion label:
@@ -70,7 +71,7 @@ def visualize_embeds(image_embeds: ndarray, image_labels: ndarray, audio_embeds:
         assert x_image_feats_curr.shape == y_image_feats_curr.shape, "Error with shape of per-class image t-SNE features."
 
         # add image points to scatter plot:
-        ax.scatter(x_image_feats_curr, y_image_feats_curr, c=label2color[label], marker=".", label=f"image - {label}")
+        ax.scatter(x_image_feats_curr, y_image_feats_curr, c=label2color[label], marker=".")
 
         # get audio t-SNE features for current emotion label:
         x_audio_feats_curr = x_audio_feats[audio_labels == label]
@@ -78,12 +79,12 @@ def visualize_embeds(image_embeds: ndarray, image_labels: ndarray, audio_embeds:
         assert x_audio_feats_curr.shape == y_audio_feats_curr.shape, "Error with shape of per-class audio t-SNE features."
 
         # add audio points to scatter plot:
-        ax.scatter(x_audio_feats_curr, y_audio_feats_curr, c=label2color[label], marker="x", label=f"audio - {label}")
+        ax.scatter(x_audio_feats_curr, y_audio_feats_curr, c=label2color[label], marker="x")
     
     # format plot:
     ax.set_xticks([])
     ax.set_yticks([])
-    ax.legend(loc="best")
+    ax.set_title(plot_title)
 
     # save plot:
     fig.savefig(save_path)

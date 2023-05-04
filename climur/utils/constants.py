@@ -70,3 +70,16 @@ VCMR_DEFAULT_PARAMS = {
     "video_lstm_n_layers": 2
 }
 
+
+# VISUALIZATION CONSTANTS:
+
+# dictionary mapping emotion labels to colors:
+LABEL2COLOR = {
+    "exciting": "green",
+    "happy": "blue",
+    "funny": "purple",
+    "angry": "red",
+    "scary": "black",
+    "sad": "orange"
+}
+
