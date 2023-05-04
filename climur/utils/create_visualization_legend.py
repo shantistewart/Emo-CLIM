@@ -38,7 +38,7 @@ if __name__ == "__main__":
     # IMAGE DATASET LEGEND:
 
     # get image dataset emotion labels and colors:
-    image_emotion_labels = [f"image - {label}" for label in list(IMAGE2AUDIO_TAG_MAP.keys())]
+    image_emotion_labels = list(IMAGE2AUDIO_TAG_MAP.keys())
     colors = [LABEL2COLOR[IMAGE2AUDIO_TAG_MAP[label]] for label in list(IMAGE2AUDIO_TAG_MAP.keys())]
 
     # create legend:
@@ -48,14 +48,14 @@ if __name__ == "__main__":
     export_legend(
         legend,
         save_path=os.path.join(PLOTS_DIR, "image_dataset_legend.png"),
-        expand=[-10, -10, 10, 10]
+        expand=[-2, -2, 2, 2]
     )
 
 
     # AUDIO DATASET LEGEND:
 
     # get audio dataset emotion labels and colors:
-    audio_emotion_labels = [f"audio - {label}" for label in list(IMAGE2AUDIO_TAG_MAP.values())]
+    audio_emotion_labels = list(IMAGE2AUDIO_TAG_MAP.values())
     colors = [LABEL2COLOR[label] for label in list(IMAGE2AUDIO_TAG_MAP.values())]
 
     # create legend:
@@ -65,6 +65,6 @@ if __name__ == "__main__":
     export_legend(
         legend,
         save_path=os.path.join(PLOTS_DIR, "audio_dataset_legend.png"),
-        expand=[-10, -10, 10, 10]
+        expand=[-2, -2, 2, 2]
     )
 
