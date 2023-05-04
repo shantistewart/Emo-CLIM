@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from typing import Dict
 
 
-def visualize_embeds(image_embeds: ndarray, image_labels: ndarray, audio_embeds: ndarray, audio_labels: ndarray, label2color: Dict, save_path: str, plot_title: str) -> None:
+def visualize_embeds(image_embeds: ndarray, image_labels: ndarray, audio_embeds: ndarray, audio_labels: ndarray, label2color: Dict, save_path: str, plot_title: str = None) -> None:
     """Visualizes image and audio embeddings together with t-SNE.
 
     Args:
@@ -84,7 +84,8 @@ def visualize_embeds(image_embeds: ndarray, image_labels: ndarray, audio_embeds:
     # format plot:
     ax.set_xticks([])
     ax.set_yticks([])
-    ax.set_title(plot_title)
+    if plot_title is not None:
+        ax.set_title(plot_title)
 
     # save plot:
     fig.savefig(save_path)
