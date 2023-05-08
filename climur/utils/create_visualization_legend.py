@@ -43,7 +43,7 @@ if __name__ == "__main__":
 
     # create legend:
     handles = [func(".", colors[i]) for i in range(len(colors))]
-    legend = plt.legend(handles, image_emotion_labels, loc=3, framealpha=1, frameon=True)
+    legend = plt.legend(handles, image_emotion_labels, loc=3, framealpha=1, frameon=True, ncols=len(image_emotion_labels))
     # export legend:
     export_legend(
         legend,
@@ -60,7 +60,7 @@ if __name__ == "__main__":
 
     # create legend:
     handles = [func("x", colors[i]) for i in range(len(colors))]
-    legend = plt.legend(handles, audio_emotion_labels, loc=3, framealpha=1, frameon=True)
+    legend = plt.legend(handles, audio_emotion_labels, loc=3, framealpha=1, frameon=True, ncols=len(audio_emotion_labels))
     # export legend:
     export_legend(
         legend,
