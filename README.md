@@ -49,14 +49,18 @@ pip install git+https://github.com/openai/CLIP.git
 ```
 Emo-CLIM/
 ├── climur/               # core directory for pretraining and downstream evaluation
-│   ├── dataloaders/         # PyTorch Dataset classes
-│   ├── losses/              # PyTorch loss functions
-│   ├── models/              # PyTorch Module classes
-│   ├── scripts/             # training and evaluation scripts
-│   ├── trainers/            # PyTorch Lightning LightningModule classes
-│   └── utils/               # utility functions
+│  ├── dataloaders/          # PyTorch Dataset classes
+│  ├── losses/               # PyTorch loss functions
+│  ├── models/               # PyTorch Module classes
+│  ├── scripts/              # training and evaluation scripts
+│  ├── trainers/             # PyTorch Lightning LightningModule classes
+│  └── utils/                # utility functions
 ├── configs/              # configuration files for training and evaluation
 ├── data_prep/            # data preparation scripts
+├── figures/              # Emo-CLIM figures
+├── plots/                # t-SNE plots
+├── results_test/         # cross-modal retrieval evaluation results on test set
+├── results_val/          # cross-modal retrieval evaluation results on validation set
 └── tests/                # test scripts
 ```
 
