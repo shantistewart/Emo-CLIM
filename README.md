@@ -74,7 +74,7 @@ If this project helps your research, please cite our paper:
   title={Emotion-Aligned Contrastive Learning Between Images and Music}, 
   author={Stewart, Shanti and Avramidis*, Kleanthis and Feng*, Tiantian and Narayanan, Shrikanth},
   booktitle={IEEE International Conference on Acoustics, Speech and Signal Processing, ICASSP}, 
-  year={2024},
+  year={2024}
 }
 ```
 
