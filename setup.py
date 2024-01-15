@@ -7,9 +7,9 @@ from setuptools import find_packages, setup, Command
 
 # Package metadata
 NAME = "climur"
-DESCRIPTION = "Contrastive Language-augmented Image-to-MUsic Retrieval"
-URL = "https://github.com/shantistewart/CLIMuR"
-EMAIL = "systewar@usc.edu"
+DESCRIPTION = "Emo-CLIM: Emotion-Aligned Contrastive Learning Between Images and Music "
+URL = "https://github.com/shantistewart/Emo-CLIM"
+EMAIL = "shantiystewart@gmail.com"
 AUTHOR = "Shanti Stewart"
 REQUIRES_PYTHON = ">=3.9.0"
 VERSION = "0.1.0"
