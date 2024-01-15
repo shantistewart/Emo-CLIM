@@ -4,10 +4,11 @@
 
 # Emotion-Aligned Contrastive Learning Between Images and Music
 [Shanti Stewart](https://www.linkedin.com/in/shanti-stewart/)<sup>1</sup>,
-[Kleanthis Avramidis](https://klean2050.github.io/)<sup>1</sup>,
-[Tiantian Feng](https://www.linkedin.com/in/tiantian-feng-b4367989/)<sup>1</sup>,
+[Kleanthis Avramidis](https://klean2050.github.io/)<sup>1 *</sup>,
+[Tiantian Feng](https://www.linkedin.com/in/tiantian-feng-b4367989/)<sup>1 *</sup>,
 [Shrikanth Narayanan](https://viterbi.usc.edu/directory/faculty/Narayanan/Shrikanth/)<sup>1</sup> <br>
-<sup>1</sup>  Signal Analysis and Interpretation Lab, University of Southern California
+<sup>1</sup> Signal Analysis and Interpretation Lab, University of Southern California <br>
+<sup>\*</sup> Equal contribution
 
 [![arXiv](https://img.shields.io/badge/arXiv-2112.04214-<COLOR>.svg)](https://arxiv.org/abs/2308.12610)
 
@@ -62,5 +63,18 @@ Emo-CLIM/
 ├── results_test/         # cross-modal retrieval evaluation results on test set
 ├── results_val/          # cross-modal retrieval evaluation results on validation set
 └── tests/                # test scripts
+```
+
+
+## Citation
+If this project helps your research, please cite our paper:
+
+```bib
+@inproceedings{Stewart-2024-EmoCLIM,
+  title={Emotion-Aligned Contrastive Learning Between Images and Music}, 
+  author={Stewart, Shanti and Avramidis*, Kleanthis and Feng*, Tiantian and Narayanan, Shrikanth},
+  booktitle={IEEE International Conference on Acoustics, Speech and Signal Processing, ICASSP}, 
+  year={2024},
+}
 ```
 
