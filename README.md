@@ -78,3 +78,7 @@ If this project helps your research, please cite our paper:
 }
 ```
 
+
+## Contact
+If you have any questions, please get in touch: [shantiystewart@gmail.com](shantiystewart@gmail.com)
+
