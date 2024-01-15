@@ -1,10 +1,11 @@
 """PyTorch dataset class for retrieving images and audio clips."""
 
 
+import torch
 from torch.utils.data import Dataset
 from torch import Tensor
 import random
-from typing import Union, Dict
+from typing import Union, Dict, List
 from climur.utils.constants import IMAGE2AUDIO_TAG_MAP
 
 
@@ -107,11 +108,11 @@ class Multimodal(Dataset):
         
         Returns:
             item (dict): Item dictionary with keys/values:
-                "image": (Tensor) Raw image.
-                    shape: (image_channels, image_height, image_width)
+                "image": (Tensor) Multiple augmented views of image.
+                    shape: (n_views, image_channels, image_height, image_width)
                 "image_label" (int): Image emotion label index.
-                "audio": (Tensor) Raw audio clip.
-                    shape: (audio_clip_length, )
+                "audio": (Tensor) Multiple augmented views of audio clip.
+                    shape: (n_views, audio_clip_length)
                 "audio_label" (int): Audio emotion label index.
         """
 
@@ -138,4 +139,91 @@ class Multimodal(Dataset):
         }
 
         return item
+    
+    def collate_fn(self, batch: List) -> Dict:
+        """Custom collate function for Multimodal dataset class.
+
+        Args:
+            batch (list): List of batch items.
+        
+        Returns:
+            batch_dict (dict): Batch dictionary with keys/values:
+                "image": (Tensor) Augmented images.
+                    shape: (batch_size * n_views, image_channels, image_height, image_width)
+                "image_label" (Tensor): Image emotion label indices.
+                    shape: (batch_size * n_views, )
+                "audio": (Tensor) Augmented audio clips.
+                    shape: (batch_size * n_views, audio_clip_length)
+                "audio_label" (int): Audio emotion label indices.
+                    shape: (batch_size * n_views, )
+        """
+
+        # sanity check:
+        assert set(list(batch[0].keys())) == {"image", "image_label", "audio", "audio_label"}, "Item keys are unexpected."
+
+        # unpack batch:
+        batch_size = len(batch)
+        image_views_list = [item["image"] for item in batch]     # list element shape: (n_views, image_channels, image_height, image_width)
+        image_labels_orig = [item["image_label"] for item in batch]
+        audio_views_list = [item["audio"] for item in batch]     # list element shape: shape: (n_views, audio_clip_length)
+        audio_labels_orig = [item["audio_label"] for item in batch]
+
+        # unroll multiple views of images:
+        images_list = []
+        n_image_views = image_views_list[0].size(dim=0)
+        for image_views in image_views_list:
+            for k in range(n_image_views):
+                images_list.append(image_views[k])
+        # convert list to tensor:
+        images = torch.stack(images_list, dim=0)     # shape: (batch_size * n_views, image_channels, image_height, image_width)
+        assert len(tuple(images.size())) == 4 and images.size(dim=0) == batch_size * n_image_views, "Error with shape of unrolled images."
+
+        # unroll multiple views of audio clips:
+        audios_list = []
+        n_audio_views = audio_views_list[0].size(dim=0)
+        for audio_views in audio_views_list:
+            for k in range(n_audio_views):
+                audios_list.append(audio_views[k])
+        # convert list to tensor:
+        audios = torch.stack(audios_list, dim=0)     # shape: (batch_size * n_views, audio_clip_length)
+        assert len(tuple(audios.size())) == 2 and audios.size(dim=0) == batch_size * n_audio_views, "Error with shape of unrolled audio clips."
+
+
+        """
+        # convert to tensors:
+        image_views = torch.stack(image_views_list, dim=0)     # shape: (batch_size, n_views, image_channels, image_height, image_width)
+        audio_views = torch.stack(audio_views_list, dim=0)     # shape: (batch_size, n_views, audio_clip_length)
+        # remove n_views dimension:
+        n_image_views = image_views.size(dim=1)
+        n_audio_views = audio_views.size(dim=1)
+        images = image_views.view(batch_size * n_image_views, -1)     # (batch_size, n_views, image_channels, image_height, image_width) -> (batch_size * n_views, image_channels, image_height, image_width)
+        audios = audio_views.view(batch_size * n_audio_views, -1)     # shape: (batch_size, n_views, audio_clip_length) -> (batch_size * n_views, audio_clip_length)
+        """
+
+
+        # repeat image labels to account for multiple views of images:
+        image_labels = []
+        for label in image_labels_orig:
+            for k in range(n_image_views):
+                image_labels.append(label)
+        
+        # repeat audio labels to account for multiple views of audio clips:
+        audio_labels = []
+        for label in audio_labels_orig:
+            for k in range(n_audio_views):
+                audio_labels.append(label)
+        
+        # convert labels to tensors:
+        image_labels = torch.tensor(image_labels)
+        audio_labels = torch.tensor(audio_labels)
+
+        # create batch dictionary:
+        batch_dict = {
+            "image": images,
+            "image_label": image_labels,
+            "audio": audios,
+            "audio_label": audio_labels
+        }
+
+        return batch_dict
 

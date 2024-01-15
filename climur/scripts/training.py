@@ -66,6 +66,8 @@ if __name__ == "__main__":
     configs = load_configs(args.config_file)
     # unpack configs:
     dataset_configs = configs["dataset"]
+    image_augment_configs = configs["image_augment"]
+    audio_augment_configs = configs["audio_augment"]
     audio_backbone_configs = configs["audio_backbone"]
     full_model_configs = configs["full_model"]
     training_configs = configs["training"]
@@ -190,12 +192,16 @@ if __name__ == "__main__":
     image_train_dataset = IMACImages(
         root=dataset_configs["image_dataset_dir"],
         metadata_file_name="metadata_train.csv",
-        preprocess=image_preprocess_transform,
+        augment_params=image_augment_configs,
+        eval=False,
+        preprocess=None
     )
-    image_val_dataset = IMACImages(
+    image_val_dataset = IMACImages(     # TODO: Double-check that having validation dataset in eval mode makes sense.
         root=dataset_configs["image_dataset_dir"],
         metadata_file_name="metadata_val.csv",
-        preprocess=image_preprocess_transform,
+        augment_params=None,     # no data augmentations
+        eval=False,
+        preprocess=image_preprocess_transform
     )
 
     # create audio datasets:
@@ -204,13 +210,17 @@ if __name__ == "__main__":
         metadata_file_name="new_split_metadata_files/metadata_train.csv",
         clip_length_samples=audio_clip_length,
         sample_rate=dataset_configs["sample_rate"],
+        augment_params=audio_augment_configs,
+        eval=False,
         audio_model=audio_backbone_configs["model_name"]
     )
-    audio_val_dataset = AudioSetMood(
+    audio_val_dataset = AudioSetMood(     # TODO: Double-check that having validation dataset not have any augmentations makes sense.
         root=dataset_configs["audio_dataset_dir"],
         metadata_file_name="new_split_metadata_files/metadata_val.csv",
         clip_length_samples=audio_clip_length,
         sample_rate=dataset_configs["sample_rate"],
+        augment_params=None,     # no data augmentations
+        eval=False,
         audio_model=audio_backbone_configs["model_name"]
     )
 
@@ -247,6 +257,7 @@ if __name__ == "__main__":
         batch_size=training_configs["batch_size"],
         shuffle=True,
         num_workers=training_configs["n_workers"],
+        collate_fn=multimodal_train_dataset.collate_fn,
         drop_last=True,
     )
     assert (
@@ -257,6 +268,7 @@ if __name__ == "__main__":
         batch_size=training_configs["batch_size"],
         shuffle=False,
         num_workers=training_configs["n_workers"],
+        collate_fn=multimodal_val_dataset.collate_fn,
         drop_last=True,
     )
     assert len(val_loader) == dataset_configs["val_n_batches"], "Length of val_loader is incorrect."

@@ -1,0 +1,30 @@
+{
+   "precision": {
+      "k=1": {
+         "scary": 0.7526,
+         "sad": 0.7338,
+         "funny": 0.053,
+         "angry": 0.661,
+         "happy": 0.7135,
+         "exciting": 0.7656
+      },
+      "k=5": {
+         "scary": 0.7732,
+         "sad": 0.727,
+         "funny": 0.2178,
+         "angry": 0.7,
+         "happy": 0.6908,
+         "exciting": 0.7451
+      }
+   },
+   "MRR": {
+      "k=N/A": {
+         "scary": 0.8082,
+         "sad": 0.7879,
+         "funny": 0.3148,
+         "angry": 0.7362,
+         "happy": 0.7985,
+         "exciting": 0.867
+      }
+   }
+}

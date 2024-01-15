@@ -29,6 +29,9 @@ IMAGE2AUDIO_TAG_MAP = {
 
 # MODEL CONSTANTS:
 
+# image input size (height and width are equal) for CLIP:
+CLIP_IMAGE_SIZE = 224
+
 # audio input lengths (in samples) for each audio backbone model:
 SHORTCHUNK_INPUT_LENGTH     = 59049         # ~3.69 seconds
 HARMONIC_CNN_INPUT_LENGTH   = 80000         # 5.0 seconds
@@ -65,5 +68,18 @@ VCMR_DEFAULT_PARAMS = {
     "video_crop_length_sec": 6,
     "video_n_features": 512,
     "video_lstm_n_layers": 2
+}
+
+
+# VISUALIZATION CONSTANTS:
+
+# dictionary mapping emotion labels to colors:
+LABEL2COLOR = {
+    "exciting": "green",
+    "happy": "blue",
+    "funny": "purple",
+    "angry": "red",
+    "scary": "black",
+    "sad": "orange"
 }
 
